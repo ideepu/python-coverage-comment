@@ -1,0 +1,106 @@
+default_language_version:
+    python: python3.11
+default_install_hook_types: [pre-commit, pre-push, pre-rebase]
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+    -   id: check-yaml
+    -   id: check-toml
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+    -   id: check-ast
+    -   id: check-builtin-literals
+    -   id: check-docstring-first
+    -   id: debug-statements
+    -   id: fix-encoding-pragma
+    -   id: double-quote-string-fixer
+    -   id: check-added-large-files
+    -   id: check-merge-conflict
+    -   id: name-tests-test
+        # ensure tests match `test_.*\.py`
+        # NOTE: arg should be `--pytest-test-first` but only the following works now
+        args: ['--django']
+    -   id: no-commit-to-branch
+        args: [--branch, master]
+-   repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+    -   id: python-use-type-annotations
+    -   id: python-check-blanket-noqa
+    -   id: python-check-blanket-type-ignore
+    -   id: python-check-mock-methods
+    -   id: python-no-eval
+    -   id: python-no-log-warn
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.1.6
+  hooks:
+    - id: ruff
+    - id: ruff-format
+      args: ['--check']
+-   repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 23.11.0
+    hooks:
+    -   id: black
+        args: ['--check']
+-   repo: https://github.com/hhatto/autopep8
+    rev: v2.0.4
+    hooks:
+    -   id: autopep8
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.7.0
+    hooks:
+    -   id: mypy
+        additional_dependencies: ['types-pytz', 'types-requests']
+-   repo: https://github.com/PyCQA/flake8
+    rev: 6.1.0
+    hooks:
+    -   id: flake8
+        additional_dependencies: ['Flake8-pyproject==1.2.3']
+-   repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+    -   id: bandit
+        args: ["-c", "pyproject.toml"]
+-   repo: https://github.com/pylint-dev/pylint
+    rev: v3.0.2
+    hooks:
+    -   id: pylint
+-   repo: https://github.com/PyCQA/isort
+    rev: 5.12.0
+    hooks:
+    -   id: isort
+        args: ['--check-only']
+-   repo: https://github.com/hadialqattan/pycln
+    rev: v2.4.0
+    hooks:
+    -   id: pycln
+-   repo: https://github.com/mrtazz/checkmake.git
+    rev: 0.2.2
+    hooks:
+    -   id: checkmake
+- repo: https://github.com/tox-dev/pyproject-fmt
+  rev: "1.0.0"
+  hooks:
+    - id: pyproject-fmt
+      args: ['--check']
+- repo: local
+  hooks:
+  - id: commit-msg
+    name: Check commit message
+    language: pygrep
+    entry: '^(chore|test|setup|feature|fix|build|docs|refactor)!?: [a-zA-Z0-9-_ ]+[a-zA-Z0-9-_ ]+.*'
+    args:
+    - --negate # fails if the entry is NOT matched
+    stages:
+    - commit-msg
+- repo: local
+  hooks:
+  - id: pytest
+    name: pytest
+    entry: make test
+    language: system
+    pass_filenames: false
+    always_run: true
+    stages:
+    - pre-push
