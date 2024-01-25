@@ -3,8 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from codecov import coverage as coverage_module
-from codecov import groups
+from codecov import coverage as coverage_module, groups
 
 MAX_ANNOTATION_GAP = 3
 

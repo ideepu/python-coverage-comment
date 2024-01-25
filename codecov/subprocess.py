@@ -5,7 +5,7 @@ import functools
 import os
 import pathlib
 import shlex
-import subprocess
+import subprocess  # nosec: B404:blacklist
 from typing import Any
 
 from codecov import log
@@ -22,7 +22,7 @@ class GitError(SubProcessError):
 def run(*args, path: pathlib.Path, **kwargs) -> str:
     try:
         return subprocess.run(
-            [shlex.quote(arg) for arg in args],  # noqa: S603
+            [shlex.quote(arg) for arg in args],  # nosec: B603:subprocess_without_shell_equals_true # noqa: S603
             cwd=path,
             text=True,
             # Only relates to DecodeErrors while decoding the output

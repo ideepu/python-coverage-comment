@@ -32,6 +32,9 @@ target-version = 'py311'
 [tool.ruff.mccabe]
 max-complexity = 10
 
+[tool.ruff.lint.isort]
+combine-as-imports = true
+
 [tool.ruff.format]
 quote-style = 'single'
 
@@ -42,9 +45,10 @@ quote-style = 'single'
 [tool.isort]
 profile = "black"
 line_length = 120
+combine_as_imports = true
 
 [tool.flake8]
-ignore = ['E501']
+ignore = ['E501', 'W503', 'W504']
 
 [tool.pytest.ini_options]
 env = ['APP_ENVIRONMENT = unittest']

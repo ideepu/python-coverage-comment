@@ -6,10 +6,7 @@ by shields.io
 from __future__ import annotations
 
 import decimal
-import json
 import urllib.parse
-
-import httpx
 
 
 def get_badge_color(
@@ -26,50 +23,8 @@ def get_badge_color(
     return 'red'
 
 
-def compute_badge_endpoint_data(
-    line_rate: decimal.Decimal,
-    color: str,
-) -> str:
-    badge = {
-        'schemaVersion': 1,
-        'label': 'Coverage',
-        'message': f'{int(line_rate)}%',
-        'color': color,
-    }
-
-    return json.dumps(badge)
-
-
-def compute_badge_image(line_rate: decimal.Decimal, color: str, http_session: httpx.Client) -> str:
-    return http_session.get(
-        'https://img.shields.io/static/v1?'
-        + urllib.parse.urlencode(
-            {
-                'label': 'Coverage',
-                'message': f'{int(line_rate)}%',
-                'color': color,
-            }
-        )
-    ).text
-
-
 def get_static_badge_url(label: str, message: str, color: str) -> str:
     if not color or not message:
         raise ValueError('color and message are required')
     code = '-'.join(e.replace('_', '__').replace('-', '--') for e in (label, message, color) if e)
     return 'https://img.shields.io/badge/' + urllib.parse.quote(f'{code}.svg')
-
-
-def get_endpoint_url(endpoint_url: str) -> str:
-    return f'https://img.shields.io/endpoint?url={endpoint_url}'
-
-
-def get_dynamic_url(endpoint_url: str) -> str:
-    return 'https://img.shields.io/badge/dynamic/json?' + urllib.parse.urlencode(
-        {
-            'color': 'brightgreen',
-            'label': 'coverage',
-            'query': '$.message',
-            'url': endpoint_url,
-        }
-    )

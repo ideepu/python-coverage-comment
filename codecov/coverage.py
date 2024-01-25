@@ -23,7 +23,7 @@ class CoverageMetadata:
 
 
 @dataclasses.dataclass
-class CoverageInfo:
+class CoverageInfo:  # pylint: disable=too-many-instance-attributes
     covered_lines: int
     num_statements: int
     percent_covered: decimal.Decimal

@@ -7,8 +7,6 @@ import httpx
 
 from codecov import (
     coverage as coverage_module,
-)
-from codecov import (
     diff_grouper,
     github,
     github_client,
@@ -74,7 +72,7 @@ def action(config: settings.Config, github_session: httpx.Client, git: subproces
     )
 
 
-def process_pr(
+def process_pr(  # pylint: disable=too-many-locals
     config: settings.Config,
     gh: github_client.GitHub,
     repo_info: github.RepositoryInfo,

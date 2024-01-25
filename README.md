@@ -7,7 +7,7 @@ Create a Coverage report comment on Github PR
 
 To get started, follow these steps:
 
-1. Clone the repository: 
+1. Clone the repository:
     ```
     git clone <repository_url>
     ```
