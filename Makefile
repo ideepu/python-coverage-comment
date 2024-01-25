@@ -34,6 +34,6 @@ clean-lint:
 	pipenv run pre-commit clean
 	pipenv run pre-commit gc
 
-all: setup-pipenv setup lint run
+all: setup-pipenv setup lint
 
 clean: clean-lint clean-setup

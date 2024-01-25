@@ -22,7 +22,7 @@ def main():
     try:
         config = settings.Config.from_environ(environ=os.environ)
 
-        logging.basicConfig(level='DEBUG')
+        logging.basicConfig(level='DEBUG' if config.DEBUG else 'INFO')
         logging.getLogger().handlers[0].formatter = (
             log_utils.ConsoleFormatter() if config.DEBUG else log_utils.GitHubFormatter()
         )

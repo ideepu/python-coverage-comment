@@ -6,7 +6,7 @@
 {%- if coverage %}
 {%- set text = "Coverage of the whole project for this PR is" ~ coverage.info.percent_covered_display ~ "." -%}
 {%- set color = coverage.info.percent_covered | get_badge_color -%}
-<img title="{{ text }}" src="{{ 'Coverage' | generate_badge(message=coverage.info.percent_covered_display, color=color) }}">
+<img title="{{ text }}" src="{{ 'Coverage' | generate_badge(message=coverage.info.percent_covered_display ~ "%", color=color) }}">
 
 {%- endif -%}
 {%- endblock coverage_evolution_badge -%}
@@ -29,8 +29,12 @@
 
 
 {%- macro missing_lines_badge(path, missing_lines_count, base=false) -%}
-{%- set text = "" ~ missing_lines_count ~ " statement" ~ (statements_count | pluralize) ~ " missing the coverage in " ~ path ~ "." -%}
-{%- set color = 'red' -%}
+{%- set text = missing_lines_count ~ " statement" ~ (statements_count | pluralize) ~ " missing the coverage in " ~ path ~ "." -%}
+{% if missing_lines_count == 0 -%}
+{%- set color = "brightgreen" -%}
+{% else -%}
+{%- set color = "red" -%}
+{% endif -%}
 <td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ '' | generate_badge(message=(missing_lines_count | string), color=color) }}"></a></td>
 
 {%- endmacro -%}
