@@ -95,6 +95,9 @@ def post_comment(  # pylint: disable=too-many-arguments
     contents: str,
     marker: str,
 ) -> None:
+    if len(contents) > 65536:
+        raise CannotPostComment('Comment exceeds allowed size(65536)')
+
     issue_comments_path = github.repos(repository).issues(pr_number).comments
     comments_path = github.repos(repository).issues.comments
 

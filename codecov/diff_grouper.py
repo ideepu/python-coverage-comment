@@ -23,7 +23,8 @@ def get_missing_groups(
         }
         # Lines that should be considered for filling a gap, unless
         # they are separators.
-        joiners = set(range(1, coverage_file.info.num_statements)) - separators
+        # The first line is UTF-8 encoding declaration, which is not a separator.
+        joiners = set(range(2, coverage_file.info.num_statements)) - separators
 
         for start, end in groups.compute_contiguous_groups(
             values=coverage_file.missing_lines,

@@ -90,10 +90,15 @@ def process_pr(
     diff_coverage = coverage_module.get_diff_coverage_info(coverage=coverage, added_lines=added_lines)
     marker = template.get_marker(marker_id=config.SUBPROJECT_ID)
 
-    files_info, count_files = template.select_files(
+    files_info, count_files, changed_files_info = template.select_changed_files(
         coverage=coverage,
         diff_coverage=diff_coverage,
         max_files=config.MAX_FILES_IN_COMMENT,
+    )
+    coverage_files_info, count_coverage_files = template.select_files(
+        coverage=coverage,
+        changed_files_info=changed_files_info,
+        max_files=config.MAX_FILES_IN_COMMENT - count_files,  # Truncate the report to MAX_FILES_IN_COMMENT
     )
     try:
         comment = template.get_comment_markdown(
@@ -101,6 +106,8 @@ def process_pr(
             diff_coverage=diff_coverage,
             files=files_info,
             count_files=count_files,
+            coverage_files=coverage_files_info,
+            count_coverage_files=count_coverage_files,
             max_files=config.MAX_FILES_IN_COMMENT,
             minimum_green=config.MINIMUM_GREEN,
             minimum_orange=config.MINIMUM_ORANGE,
