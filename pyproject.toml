@@ -1,0 +1,86 @@
+[project]
+name = "python-coverage-comment"
+version = "1.0"
+description = "Create a Coverage report comment on Github PR"
+readme = "README.md"
+maintainers = [
+  { name = "Pradeep Tammali", email = "pradeepkumartammali@gmail.com" },
+]
+
+[tool.autopep8]
+in-place = false
+max_line_length = 120
+
+[tool.black]
+line-length = 120
+skip-string-normalization = true
+
+[tool.ruff]
+ignore = [
+  # format
+  'E501', # line too long
+]
+line-length = 120
+select = [
+  'E', # Errors
+  'W', # Warnings
+  'F', # Formatting
+  'S', # Bandit
+]
+target-version = 'py311'
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+
+[tool.ruff.format]
+quote-style = 'single'
+
+[tool.ruff.per-file-ignores]
+# Ignore assert usage in tests
+'tests/*.py' = ['S101']
+
+[tool.isort]
+profile = "black"
+line_length = 120
+combine_as_imports = true
+
+[tool.flake8]
+ignore = ['E501', 'W503', 'W504']
+
+[tool.pytest.ini_options]
+env = ['APP_ENVIRONMENT = unittest']
+
+[tool.coverage.run]
+include = ['codecov/*']
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = ['if TYPE_CHECKING:']
+
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+implicit_optional = true
+module = 'codecov.*'
+
+[tool.pylint.MASTER]
+ignore-paths = ['tests/*']
+
+[tool.pylint.FORMAT]
+indent-string = '    '
+max-line-length = 120
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = '''
+    missing-docstring,
+    line-too-long,
+    import-error,
+    fixme,
+    no-value-for-parameter,
+    too-few-public-methods
+'''
+
+[tool.bandit]
+exclude_dirs = ["tests/*"]
