@@ -48,9 +48,10 @@ class GitHub:
     def __getattr__(self, attr):
         return _Callable(self, f'/{attr}')
 
-    def _http(self, method, path, *, use_bytes=False, **kw):
+    def _http(self, method, path, *, use_bytes=False, use_text=False, **kw):
         _method = method.lower()
         requests_kwargs = {}
+        headers = kw.pop('headers', {})
         if _method == 'get' and kw:
             requests_kwargs = {'params': kw}
 
@@ -61,10 +62,13 @@ class GitHub:
             _method.upper(),
             path,
             timeout=TIMEOUT,
+            headers=headers,
             **requests_kwargs,
         )
         if use_bytes:
             contents = response.content
+        elif use_text:
+            contents = response.text
         else:
             contents = response_contents(response)
 

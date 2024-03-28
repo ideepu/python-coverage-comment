@@ -87,6 +87,21 @@ def get_pr_number(github: github_client.GitHub, config: settings.Config) -> int:
     )
 
 
+def get_pr_diff(github: github_client.GitHub, repository: str, pr_number: int) -> str:
+    try:
+        pull_request_diff = (
+            github.repos(repository)
+            .pulls(pr_number)
+            .get(use_text=True, headers={'Accept': 'application/vnd.github.v3.diff'})
+        )
+    except github_client.Forbidden as exc:
+        raise CannotGetPullRequest from exc
+    except github_client.NotFound as exc:
+        raise CannotGetPullRequest from exc
+
+    return pull_request_diff
+
+
 def post_comment(  # pylint: disable=too-many-arguments
     github: github_client.GitHub,
     me: str,

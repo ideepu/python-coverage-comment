@@ -5,17 +5,7 @@ import sys
 
 import httpx
 
-from codecov import (
-    coverage as coverage_module,
-    diff_grouper,
-    github,
-    github_client,
-    log,
-    log_utils,
-    settings,
-    subprocess,
-    template,
-)
+from codecov import coverage as coverage_module, diff_grouper, github, github_client, log, log_utils, settings, template
 
 
 def main():
@@ -33,9 +23,8 @@ def main():
             follow_redirects=True,
             headers={'Authorization': f'token {config.GITHUB_TOKEN}'},
         )
-        git = subprocess.Git()
 
-        exit_code = action(config=config, github_session=github_session, git=git)
+        exit_code = action(config=config, github_session=github_session)
         log.info('Ending action')
         sys.exit(exit_code)
 
@@ -46,7 +35,7 @@ def main():
         sys.exit(1)
 
 
-def action(config: settings.Config, github_session: httpx.Client, git: subprocess.Git) -> int:
+def action(config: settings.Config, github_session: httpx.Client) -> int:
     log.debug('Fetching Pull Request')
     gh = github_client.GitHub(session=github_session)
     try:
@@ -67,7 +56,6 @@ def action(config: settings.Config, github_session: httpx.Client, git: subproces
         config=config,
         gh=gh,
         repo_info=repo_info,
-        git=git,
         pr_number=pr_number,
     )
 
@@ -76,15 +64,13 @@ def process_pr(  # pylint: disable=too-many-locals
     config: settings.Config,
     gh: github_client.GitHub,
     repo_info: github.RepositoryInfo,
-    git: subprocess.Git,
     pr_number: int,
 ) -> int:
     log.info('Generating comment for PR')
-    _, coverage = coverage_module.get_coverage_info(
-        coverage_path=config.COVERAGE_PATH,
-    )
+    _, coverage = coverage_module.get_coverage_info(coverage_path=config.COVERAGE_PATH)
     base_ref = config.GITHUB_BASE_REF or repo_info.default_branch
-    added_lines = coverage_module.get_added_lines(git=git, base_ref=base_ref)
+    pr_diff = github.get_pr_diff(github=gh, repository=config.GITHUB_REPOSITORY, pr_number=pr_number)
+    added_lines = coverage_module.parse_diff_output(diff=pr_diff)
     diff_coverage = coverage_module.get_diff_coverage_info(coverage=coverage, added_lines=added_lines)
     marker = template.get_marker(marker_id=config.SUBPROJECT_ID)
 
