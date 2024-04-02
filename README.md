@@ -2,6 +2,16 @@
 
 Create a Coverage report comment on Github PR
 
+run:
+
+```bash
+GITHUB_REPOSITORY=<repository_name> \
+COVERAGE_PATH=<path_to_coverage_report> \
+GITHUB_TOKEN=<github_token> \
+GITHUB_PR_NUMBER=<pull_request_number> \
+codecov
+```
+
 ## Setting up Local Environment using Pipenv
 
 To get started, follow these steps:
