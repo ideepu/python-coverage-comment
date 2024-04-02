@@ -3,10 +3,42 @@ name = "python-coverage-comment"
 version = "1.0"
 description = "Create a Coverage report comment on Github PR"
 readme = "README.md"
+license = { file = "LICENSE" }
 maintainers = [
-  { name = "Pradeep Tammali", email = "pradeepkumartammali@gmail.com" },
+  { name = "Pradeep Tammali", email = "pradeeptammaliwork@gmail.com" },
+]
+requires-python = ">=3.0"
+dependencies = [
+  "httpx",
+  "jinja2",
+]
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.0",
+  "Programming Language :: Python :: 3.1",
+  "Programming Language :: Python :: 3.2",
+  "Programming Language :: Python :: 3.3",
+  "Programming Language :: Python :: 3.4",
+  "Programming Language :: Python :: 3.5",
+  "Programming Language :: Python :: 3.6",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
 ]
 
+[project.urls]
+Homepage = "https://github.com/PradeepTammali/python-coverage-comment"
+Issues = "https://github.com/PradeepTammali/python-coverage-comment/issues"
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools",
+]
+
+[project.scripts]
+codecov = "codecov.main:main"
 [tool.autopep8]
 in-place = false
 max_line_length = 120
@@ -58,7 +90,6 @@ include = ['codecov/*']
 
 [tool.coverage.report]
 show_missing = true
-exclude_lines = ['if TYPE_CHECKING:']
 
 [[tool.mypy.overrides]]
 ignore_missing_imports = true
