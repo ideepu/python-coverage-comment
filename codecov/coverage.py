@@ -8,7 +8,7 @@ import json
 import pathlib
 from collections.abc import Sequence
 
-from codecov import log, subprocess
+from codecov import log
 
 
 # The dataclasses in this module are accessible in the template, which is overridable by the user.
@@ -238,17 +238,6 @@ def get_diff_coverage_info(added_lines: dict[pathlib.Path, list[int]], coverage:
     )
 
 
-def get_added_lines(git: subprocess.Git, base_ref: str) -> dict[pathlib.Path, list[int]]:
-    # --unified=0 means we don't get any context lines for chunk, and we
-    # don't merge chunks. This means the headers that describe line number
-    # are always enough to derive what line numbers were added.
-    # TODO: check if it is possible to pull the diff changes from github API
-    # TODO: Since we don't want to checkout the code locally, it would be better to pull the diff from remote
-    git.fetch('origin', base_ref, '--depth=1000')
-    diff = git.diff('--unified=0', 'FETCH_HEAD', '--', '.')
-    return parse_diff_output(diff)
-
-
 def parse_diff_output(diff: str) -> dict[pathlib.Path, list[int]]:
     current_file: pathlib.Path | None = None
     added_filename_prefix = '+++ b/'
@@ -272,6 +261,8 @@ def parse_line_number_diff_line(line: str) -> Sequence[int]:
     Parse the "added" part of the line number diff text:
         @@ -60,0 +61 @@ def compute_files(  -> [61]
         @@ -60,0 +61,3 @@ def compute_files(  -> [61, 62, 63]
+
+    Github API returns default context lines 3 at start and end, so we can ignore them.
     """
     start, length = (int(i) for i in (line.split()[2][1:] + ',1').split(',')[:2])
-    return range(start, start + length)
+    return range(start + 3, start + length - 3)
