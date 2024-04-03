@@ -32,12 +32,11 @@ class _Callable:
     def __getattr__(self, attr):
         if attr in ['get', 'put', 'post', 'patch', 'delete']:
             return _Executable(self._gh, attr, self._name)
-        name = f'{self._name}/{attr}'
+        name = f'{self._name}/{attr.replace("_", "-")}'
         return _Callable(self._gh, name)
 
 
 class GitHub:
-
     """
     GitHub client.
     """
