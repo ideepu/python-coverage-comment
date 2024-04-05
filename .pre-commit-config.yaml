@@ -94,7 +94,7 @@ repos:
   - id: commit-msg
     name: Check commit message
     language: pygrep
-    entry: '^(chore|test|setup|feature|fix|build|docs|refactor)!?: [a-zA-Z0-9-_ ]+[a-zA-Z0-9-_ ]+.*'
+    entry: '^(chore|test|setup|feature|fix|build|docs|refactor|release)!?: [a-zA-Z0-9-_ ]+[a-zA-Z0-9-_ ]+.*'
     args:
     - --negate # fails if the entry is NOT matched
     stages:
