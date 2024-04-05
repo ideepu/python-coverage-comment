@@ -54,6 +54,7 @@ class Config:
     ANNOTATION_TYPE: str = 'warning'
     MAX_FILES_IN_COMMENT: int = 25
     COMPLETE_PROJECT_REPORT: bool = False
+    COVERAGE_REPORT_URL: str | None = None
     # Only for debugging, not exposed in the action
     DEBUG: bool = False
 

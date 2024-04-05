@@ -22,6 +22,12 @@ lint:
 test:
 	pipenv run pytest tests/* --cov
 
+build:
+	python3 -m build
+
+publish:
+	python3 -m twine upload dist/*
+
 run:
 	pipenv run python run.py
 

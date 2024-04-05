@@ -110,6 +110,7 @@ def get_comment_markdown(  # pylint: disable=too-many-arguments,too-many-locals
     marker: str,
     subproject_id: str | None = None,
     complete_project_report: bool = False,
+    coverage_report_url: str | None = None,
 ):
     loader = CommentLoader(base_template=base_template)
     env = SandboxedEnvironment(loader=loader)
@@ -155,6 +156,7 @@ def get_comment_markdown(  # pylint: disable=too-many-arguments,too-many-locals
             subproject_id=subproject_id,
             marker=marker,
             complete_project_report=complete_project_report,
+            coverage_report_url=coverage_report_url,
         )
     except jinja2.exceptions.TemplateError as exc:
         raise TemplateError from exc

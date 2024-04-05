@@ -102,6 +102,7 @@ def process_pr(  # pylint: disable=too-many-locals
             marker=marker,
             subproject_id=config.SUBPROJECT_ID,
             complete_project_report=config.COMPLETE_PROJECT_REPORT,
+            coverage_report_url=config.COVERAGE_REPORT_URL,
         )
     except template.MissingMarker:
         log.error(
