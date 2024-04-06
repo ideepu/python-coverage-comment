@@ -54,15 +54,6 @@ def get_my_login(github: github_client.GitHub) -> str:
     return response.login
 
 
-def get_pr(github: github_client.GitHub, repository: str, pr_number: int) -> dict:
-    try:
-        return github.repos(repository).pulls(pr_number).get()
-    except github_client.Forbidden as exc:
-        raise CannotGetPullRequest from exc
-    except github_client.NotFound as exc:
-        raise CannotGetPullRequest from exc
-
-
 def get_pr_number(github: github_client.GitHub, config: settings.Config) -> int:
     if config.GITHUB_PR_NUMBER:
         try:
@@ -141,24 +132,6 @@ def post_comment(  # pylint: disable=too-many-arguments
             issue_comments_path.post(body=contents)
         except github_client.Forbidden as exc:
             raise CannotPostComment from exc
-
-
-def create_check_run(github: github_client.GitHub, repository: str, pr_number: int) -> dict:
-    try:
-        pull_request = get_pr(github=github, repository=repository, pr_number=pr_number)
-        contents = {
-            'name': 'Codecov',
-            'head_sha': pull_request['head']['sha'],
-        }
-        check_run = github.repos(repository).check_runs.post(
-            body=contents, headers={'Accept': 'application/vnd.github+json'}
-        )
-    except github_client.Forbidden as exc:
-        raise CannotGetPullRequest from exc
-    except github_client.NotFound as exc:
-        raise CannotGetPullRequest from exc
-
-    return check_run
 
 
 def escape_property(s: str) -> str:

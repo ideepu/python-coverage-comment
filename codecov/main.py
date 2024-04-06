@@ -124,13 +124,10 @@ def process_pr(  # pylint: disable=too-many-locals
     # TODO: Disable this for now now and make it work through Github APIs
     if pr_number and config.ANNOTATE_MISSING_LINES:
         annotations = diff_grouper.get_diff_missing_groups(coverage=coverage, diff_coverage=diff_coverage)
-        checkrun = github.create_check_run(github=gh, repository=config.GITHUB_REPOSITORY, pr_number=pr_number)
-        print(annotations, checkrun)
-
-        # github.create_missing_coverage_annotations(
-        #     annotation_type=config.ANNOTATION_TYPE,
-        #     annotations=[(annotation.file, annotation.line_start, annotation.line_end) for annotation in annotations],
-        # )
+        github.create_missing_coverage_annotations(
+            annotation_type=config.ANNOTATION_TYPE,
+            annotations=[(annotation.file, annotation.line_start, annotation.line_end) for annotation in annotations],
+        )
 
     try:
         github.post_comment(
