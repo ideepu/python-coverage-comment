@@ -22,6 +22,9 @@ lint:
 test:
 	pipenv run pytest tests/* --cov
 
+report:
+	pipenv run pytest tests  --cov-branch --cov=codecov --cov-report=json:/tmp/report.json
+
 build:
 	python3 -m build
 

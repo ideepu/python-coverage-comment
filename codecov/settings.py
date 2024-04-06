@@ -44,7 +44,7 @@ class Config:
     GITHUB_TOKEN: str = dataclasses.field(repr=False)
     GITHUB_PR_NUMBER: int | None = None
     # Branch to run the action on (alternate to get PR number if not provided)
-    # Example Organisation:branch-name (Company:sample-branch)
+    # Example Organisation:branch-name (Company:sample-branch) or User:branch-name (user:sample-branch)
     GITHUB_REF: str | None = None
     GITHUB_BASE_REF: str = 'main'
     SUBPROJECT_ID: str | None = None
