@@ -76,6 +76,8 @@ Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required.
 - `SUBPROJECT_ID`: The ID or URL of the subproject or report.
 - `MINIMUM_GREEN`: The minimum coverage percentage for green status. Default is 100.
 - `MINIMUM_ORANGE`: The minimum coverage percentage for orange status. Default is 70.
+- `SKIP_COVERAGE`: Skip coverage reporting as github comment and generate only annotaions. Default is False.
+- `ANNOTATIONS_OUTPUT_PATH`: The path where the annotaions should be stored. Should be a .json file.
 - `ANNOTATE_MISSING_LINES`: Whether to annotate missing lines in the coverage report. Default is False.
 - `ANNOTATION_TYPE`: The type of annotation to use for missing lines. Default is 'warning'.
 - `MAX_FILES_IN_COMMENT`: The maximum number of files to include in the coverage report comment. Default is 25.

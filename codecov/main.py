@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import logging
 import os
 import sys
@@ -13,11 +14,13 @@ def main():
         config = settings.Config.from_environ(environ=os.environ)
 
         logging.basicConfig(level='DEBUG' if config.DEBUG else 'INFO')
-        logging.getLogger().handlers[0].formatter = (
-            log_utils.ConsoleFormatter() if config.DEBUG else log_utils.GitHubFormatter()
-        )
+        logging.getLogger().handlers[0].formatter = log_utils.ConsoleFormatter()
 
-        log.info('Starting action')
+        if config.SKIP_COVERAGE and not config.ANNOTATE_MISSING_LINES:
+            log.info('Nothing to do since both SKIP_COVERAGE and ANNOTATE_MISSING_LINES are set to False. Exiting.')
+            sys.exit(0)
+
+        log.info('Starting...')
         github_session = httpx.Client(
             base_url=github_client.BASE_URL,
             follow_redirects=True,
@@ -25,7 +28,7 @@ def main():
         )
 
         exit_code = action(config=config, github_session=github_session)
-        log.info('Ending action')
+        log.info('Ending...')
         sys.exit(exit_code)
 
     except Exception:  # pylint: disable=broad-except
@@ -72,8 +75,23 @@ def process_pr(  # pylint: disable=too-many-locals
     pr_diff = github.get_pr_diff(github=gh, repository=config.GITHUB_REPOSITORY, pr_number=pr_number)
     added_lines = coverage_module.parse_diff_output(diff=pr_diff)
     diff_coverage = coverage_module.get_diff_coverage_info(coverage=coverage, added_lines=added_lines)
-    marker = template.get_marker(marker_id=config.SUBPROJECT_ID)
 
+    if config.ANNOTATE_MISSING_LINES:
+        annotations = diff_grouper.get_diff_missing_groups(coverage=coverage, diff_coverage=diff_coverage)
+        formatted_annotations = github.create_missing_coverage_annotations(
+            annotation_type=config.ANNOTATION_TYPE,
+            annotations=annotations,
+        )
+        print(*formatted_annotations, sep='\n')
+        if config.ANNOTATIONS_OUTPUT_PATH:
+            with config.ANNOTATIONS_OUTPUT_PATH.open('w+') as annotations_file:
+                json.dump(formatted_annotations, annotations_file, cls=github.AnnotationEncoder)
+
+    if config.SKIP_COVERAGE:
+        log.info('Skipping coverage report generation')
+        return 0
+
+    marker = template.get_marker(marker_id=config.SUBPROJECT_ID)
     files_info, count_files, changed_files_info = template.select_changed_files(
         coverage=coverage,
         diff_coverage=diff_coverage,
@@ -120,14 +138,6 @@ def process_pr(  # pylint: disable=too-many-locals
             'template.'
         )
         return 1
-
-    # TODO: Disable this for now now and make it work through Github APIs
-    if pr_number and config.ANNOTATE_MISSING_LINES:
-        annotations = diff_grouper.get_diff_missing_groups(coverage=coverage, diff_coverage=diff_coverage)
-        github.create_missing_coverage_annotations(
-            annotation_type=config.ANNOTATION_TYPE,
-            annotations=[(annotation.file, annotation.line_start, annotation.line_end) for annotation in annotations],
-        )
 
     try:
         github.post_comment(
