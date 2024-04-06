@@ -70,7 +70,7 @@ def process_pr(  # pylint: disable=too-many-locals
     _, coverage = coverage_module.get_coverage_info(coverage_path=config.COVERAGE_PATH)
     base_ref = config.GITHUB_BASE_REF or repo_info.default_branch
     pr_diff = github.get_pr_diff(github=gh, repository=config.GITHUB_REPOSITORY, pr_number=pr_number)
-    added_lines = coverage_module.parse_diff_output(diff=pr_diff)
+    added_lines = coverage_module.parse_diff_output(diff=pr_diff, coverage=coverage)
     diff_coverage = coverage_module.get_diff_coverage_info(coverage=coverage, added_lines=added_lines)
     marker = template.get_marker(marker_id=config.SUBPROJECT_ID)
 
