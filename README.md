@@ -2,13 +2,18 @@
 
 Create a Coverage report comment on Github PR
 
-run:
-
 To generate the pytest coverage report
 
 ```bash
 pipenv run pytest tests  --cov-branch --cov=codecov --cov-report=json:/tmp/report.json
 ```
+
+Permissions needed for the Github Token
+`Contents:read`
+`Pull requests:read`
+`Pull requests:write`
+
+**run:**
 
 ```bash
 GITHUB_REPOSITORY=<repository_name> \

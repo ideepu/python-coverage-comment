@@ -261,7 +261,7 @@ def parse_diff_output(diff: str, coverage: Coverage) -> dict[pathlib.Path, list[
                 Github API returns default context lines 3 at start and end, we need to remove them.
                 """
                 start, length = (int(i) for i in (diff_line.split()[2][1:] + ',1').split(',')[:2])
-                current_file_coverage = current_file and coverage.files[current_file]
+                current_file_coverage = current_file and coverage.files.get(current_file)
 
                 # TODO: sometimes the file might not be in the coverage report
                 # Then we might as well just return the whole range since they are also not covered
@@ -270,7 +270,7 @@ def parse_diff_output(diff: str, coverage: Coverage) -> dict[pathlib.Path, list[
                 # Alternatively, we can get the number of statements in the file from github API
                 # But it can be not good performance-wise since we need to make a request for each file
                 if not (current_file_coverage and current_file_coverage.executed_lines):
-                    return range(start, start + length)
+                    return range(start if start == 1 else start + 3, start + length)
 
                 current_file_num_statements = current_file_coverage.executed_lines[-1] + 1
                 end = start + length
