@@ -4,6 +4,12 @@ Create a Coverage report comment on Github PR
 
 run:
 
+To generate the pytest coverage report
+
+```bash
+pipenv run pytest tests  --cov-branch --cov=codecov --cov-report=json:/tmp/report.json
+```
+
 ```bash
 GITHUB_REPOSITORY=<repository_name> \
 COVERAGE_PATH=<path_to_coverage_report> \
@@ -62,13 +68,14 @@ Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required.
 ## Optional Environment Variables
 
 - `GITHUB_BASE_REF`: The base branch for the pull request. Default is `main`.
-- `SUBPROJECT_ID`: The ID or URL of the subproject or report. (Optional)
+- `SUBPROJECT_ID`: The ID or URL of the subproject or report.
 - `MINIMUM_GREEN`: The minimum coverage percentage for green status. Default is 100.
 - `MINIMUM_ORANGE`: The minimum coverage percentage for orange status. Default is 70.
 - `ANNOTATE_MISSING_LINES`: Whether to annotate missing lines in the coverage report. Default is False.
 - `ANNOTATION_TYPE`: The type of annotation to use for missing lines. Default is 'warning'.
 - `MAX_FILES_IN_COMMENT`: The maximum number of files to include in the coverage report comment. Default is 25.
 - `COMPLETE_PROJECT_REPORT`: Whether to include the complete project coverage report in the comment. Default is False.
+- `COVERAGE_REPORT_URL`: URL of the full coverage report to mention in the comment.
 - `DEBUG`: Whether to enable debug mode. Default is False.
 
 That's it! You have successfully cloned the repository and built the project.
