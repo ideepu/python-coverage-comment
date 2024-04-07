@@ -11,9 +11,7 @@ pipenv run pytest tests  --cov-branch --cov=codecov --cov-report=json:/tmp/repor
 Permissions needed for the Github Token:
 
 `Contents:read`
-
 `Pull requests:read`
-
 `Pull requests:write`
 
 **run:**
