@@ -239,7 +239,7 @@ def get_diff_coverage_info(added_lines: dict[pathlib.Path, list[int]], coverage:
     )
 
 
-def parse_diff_output(diff: str, coverage: Coverage) -> dict[pathlib.Path, list[int]]:
+def parse_diff_output(diff: str) -> dict[pathlib.Path, list[int]]:
     current_file: pathlib.Path | None = None
     added_filename_prefix = '+++ b/'
     result: dict[pathlib.Path, list[int]] = {}
@@ -260,58 +260,38 @@ def parse_diff_output(diff: str, coverage: Coverage) -> dict[pathlib.Path, list[
 
                 Github API returns default context lines 3 at start and end, we need to remove them.
                 """
-                start, length = (int(i) for i in (diff_line.split()[2][1:] + ',1').split(',')[:2])
-                current_file_coverage = current_file and coverage.files.get(current_file)
+                start, _ = (int(i) for i in (diff_line.split()[2][1:] + ',1').split(',')[:2])
 
-                # TODO: sometimes the file might not be in the coverage report
-                # Then we might as well just return the whole range since they are also not covered
-                # But this will make the new statements in report in github comment inaccurate
+                line_start = line_end = start
+                while diff_lines:
+                    next_line = diff_lines.popleft()
+                    if next_line.startswith(' '):
+                        line_start += 1
+                        line_end += 1
+                        continue
 
-                # Alternatively, we can get the number of statements in the file from github API
-                # But it can be not good performance-wise since we need to make a request for each file
-                if not (current_file_coverage and current_file_coverage.executed_lines):
-                    return range(start if start == 1 else start + 3, start + length)
+                    if next_line.startswith('-'):
+                        continue
 
-                current_file_num_statements = current_file_coverage.executed_lines[-1] + 1
-                end = start + length
+                    diff_lines.appendleft(next_line)
+                    break
 
-                # For the first 4 lines of the file, the start is always 1
-                # So we need to check the next lines to get the context lines and remove them
-                if start == 1:
-                    while diff_lines:
-                        next_line = diff_lines.popleft()
-                        if next_line.startswith(' '):
-                            start += 1
-                            continue
-                        diff_lines.appendleft(next_line)
-                        break
-                else:
-                    start += 3
+                last_added_line = line_end
+                while diff_lines:
+                    next_line = diff_lines.popleft()
+                    if next_line.startswith(' ') or next_line.startswith('+'):
+                        line_end += 1
+                        if next_line.startswith('+'):
+                            last_added_line = line_end
+                        continue
 
-                # If the end is less then number of statements in the file
-                # Then the last 3 lines could be context lines and we need to remove them
-                if end < current_file_num_statements:
-                    end -= 3
-                else:
-                    # If the end is same as the number of statements in the file
-                    # Then the last 3 lines could be context lines and we need to remove them
-                    last_3_lines: deque[str] = deque(maxlen=3)
-                    while diff_lines:
-                        next_line = diff_lines.popleft()
-                        if next_line.startswith(' ') or next_line.startswith('+') or next_line.startswith('-'):
-                            last_3_lines.append(next_line)
-                            continue
-                        diff_lines.appendleft(next_line)
-                        break
+                    if next_line.startswith('-'):
+                        continue
 
-                    while last_3_lines:
-                        last_line = last_3_lines.pop()
-                        if last_line.startswith(' '):
-                            end -= 1
-                        else:
-                            break
+                    diff_lines.appendleft(next_line)
+                    break
 
-                return range(start, end)
+                return range(line_start, last_added_line)
 
             lines = parse_line_number_diff_line(diff_line=line)
             if len(lines) > 0:
