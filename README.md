@@ -8,9 +8,12 @@ To generate the pytest coverage report
 pipenv run pytest tests  --cov-branch --cov=codecov --cov-report=json:/tmp/report.json
 ```
 
-Permissions needed for the Github Token
+Permissions needed for the Github Token:
+
 `Contents:read`
+
 `Pull requests:read`
+
 `Pull requests:write`
 
 **run:**
