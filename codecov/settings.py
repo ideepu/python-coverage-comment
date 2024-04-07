@@ -50,8 +50,10 @@ class Config:
     SUBPROJECT_ID: str | None = None
     MINIMUM_GREEN: decimal.Decimal = decimal.Decimal('100')
     MINIMUM_ORANGE: decimal.Decimal = decimal.Decimal('70')
+    SKIP_COVERAGE: bool = False
     ANNOTATE_MISSING_LINES: bool = False
     ANNOTATION_TYPE: str = 'warning'
+    ANNOTATIONS_OUTPUT_PATH: pathlib.Path | None = None
     MAX_FILES_IN_COMMENT: int = 25
     COMPLETE_PROJECT_REPORT: bool = False
     COVERAGE_REPORT_URL: str | None = None
@@ -73,6 +75,10 @@ class Config:
 
     @classmethod
     def clean_annotate_missing_lines(cls, value: str) -> bool:
+        return str_to_bool(value)
+
+    @classmethod
+    def clean_skip_coverage(cls, value: str) -> bool:
         return str_to_bool(value)
 
     @classmethod
@@ -98,6 +104,10 @@ class Config:
     @classmethod
     def clean_coverage_path(cls, value: str) -> pathlib.Path:
         return path_below(value)
+
+    @classmethod
+    def clean_annotations_output_path(cls, value: str) -> pathlib.Path:
+        return pathlib.Path(value)
 
     # We need to type environ as a MutableMapping because that's what
     # os.environ is, and `dict[str, str]` is not enough

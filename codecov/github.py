@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import dataclasses
+import json
 import pathlib
-import sys
+from collections.abc import Iterable
 
-from codecov import github_client, log, settings
+from codecov import github_client, groups, log, settings
 
 GITHUB_ACTIONS_LOGIN = 'CI-codecov[bot]'
 
@@ -22,6 +23,39 @@ class CannotGetPullRequest(Exception):
 
 class NoArtifact(Exception):
     pass
+
+
+@dataclasses.dataclass
+class Annotation:
+    file: pathlib.Path
+    line_start: int
+    line_end: int
+    title: str
+    message_type: str
+    message: str
+
+    def __str__(self) -> str:
+        return f'{self.message_type} {self.message} in {self.file}:{self.line_start}-{self.line_end}'
+
+    def __repr__(self) -> str:
+        return f'{self.message_type} {self.message} in {self.file}:{self.line_start}-{self.line_end}'
+
+    def to_dict(self):
+        return {
+            'file': str(self.file),
+            'line_start': self.line_start,
+            'line_end': self.line_end,
+            'title': self.title,
+            'message_type': self.message_type,
+            'message': self.message,
+        }
+
+
+class AnnotationEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, Annotation):
+            return o.to_dict()
+        return super().default(o)
 
 
 @dataclasses.dataclass
@@ -134,54 +168,31 @@ def post_comment(  # pylint: disable=too-many-arguments
             raise CannotPostComment from exc
 
 
-def escape_property(s: str) -> str:
-    return s.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A').replace(':', '%3A').replace(',', '%2C')
-
-
-def escape_data(s: str) -> str:
-    return s.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
-
-
-def get_workflow_command(command: str, command_value: str, **kwargs: str) -> str:
-    """
-    Returns a string that can be printed to send a workflow command
-    https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
-    """
-    values_listed = [f'{key}={escape_property(value)}' for key, value in kwargs.items()]
-
-    context = f" {','.join(values_listed)}" if values_listed else ''
-    return f'::{command}{context}::{escape_data(command_value)}'
-
-
-def send_workflow_command(command: str, command_value: str, **kwargs: str) -> None:
-    print(
-        get_workflow_command(command=command, command_value=command_value, **kwargs),
-        file=sys.stderr,
-    )
-
-
-def create_missing_coverage_annotations(annotation_type: str, annotations: list[tuple[pathlib.Path, int, int]]):
+def create_missing_coverage_annotations(
+    annotation_type: str,
+    annotations: Iterable[groups.Group],
+) -> list[Annotation]:
     """
     Create annotations for lines with missing coverage.
 
-    annotation_type: The type of annotation to create. Can be either "error" or "warning".
+    annotation_type: The type of annotation to create. Can be either "error" or "warning" or "notice".
     annotations: A list of tuples of the form (file, line_start, line_end)
     """
-    send_workflow_command(command='group', command_value='Annotations of lines with missing coverage')
-    for file, line_start, line_end in annotations:
-        if line_start == line_end:
-            message = f'Missing coverage on line {line_start}'
+    formatted_annotations: list[Annotation] = []
+    for group in annotations:
+        if group.line_start == group.line_end:
+            message = f'Missing coverage on line {group.line_start}'
         else:
-            message = f'Missing coverage on lines {line_start}-{line_end}'
+            message = f'Missing coverage on lines {group.line_start}-{group.line_end}'
 
-        send_workflow_command(
-            command=annotation_type,
-            command_value=message,
-            # This will produce \ paths when running on windows.
-            # GHA doc is unclear whether this is right or not.
-            file=str(file),
-            line=str(line_start),
-            endLine=str(line_end),
-            title='Missing coverage',
+        formatted_annotations.append(
+            Annotation(
+                file=group.file,
+                line_start=group.line_start,
+                line_end=group.line_end,
+                title='Missing coverage',
+                message_type=annotation_type,
+                message=message,
+            )
         )
-    send_workflow_command(command='endgroup', command_value='')
+    return formatted_annotations
