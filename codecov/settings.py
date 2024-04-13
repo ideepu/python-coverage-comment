@@ -18,16 +18,13 @@ class InvalidAnnotationType(Exception):
 
 
 def path_below(path_str: str | pathlib.Path) -> pathlib.Path:
-    try:
-        path = pathlib.Path(path_str).resolve()
-        if not (path.exists() and path.is_file()):
-            raise ValueError('Path does not exist')
+    path = pathlib.Path(path_str).resolve()
+    if not (path.exists() and path.is_file()):
+        raise ValueError('Path does not exist')
 
-        if path.suffix != '.json':
-            raise ValueError('The file is not a JSON file.')
-        return path
-    except ValueError as exc:
-        raise ValueError('Path can not be resolved') from exc
+    if path.suffix != '.json':
+        raise ValueError('The file is not a JSON file.')
+    return path
 
 
 def str_to_bool(value: str) -> bool:

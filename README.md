@@ -133,4 +133,5 @@ For example, if your project has a run.py file, you can run it using the followi
 
 That's it! You have successfully set up your local environment using Pipenv.
 
-This project is inspired by the concepts of [py-cov-action/python-coverage-comment-action](https://github.com/py-cov-action/python-coverage-comment-action.git).
+This project is almost copy of [py-cov-action/python-coverage-comment-action]
+(<https://github.com/py-cov-action/python-coverage-comment-action.git>) with few modifications.

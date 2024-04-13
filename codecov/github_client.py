@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
@@ -9,7 +8,7 @@ BASE_URL = 'https://api.github.com'
 
 
 class _Executable:
-    def __init__(self, _gh, _method, _path):
+    def __init__(self, _gh: GitHub, _method: str, _path: str):
         self._gh = _gh
         self._method = _method
         self._path = _path
@@ -37,7 +36,6 @@ class _Callable:
 
 
 class GitHub:
-
     """
     GitHub client.
     """
@@ -48,7 +46,7 @@ class GitHub:
     def __getattr__(self, attr):
         return _Callable(self, f'/{attr}')
 
-    def _http(self, method, path, *, use_bytes=False, use_text=False, **kw):
+    def _http(self, method: str, path: str, *, use_bytes: bool = False, use_text: bool = False, **kw):
         _method = method.lower()
         requests_kwargs = {}
         headers = kw.pop('headers', {})

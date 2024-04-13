@@ -6,7 +6,7 @@ from collections.abc import Iterable
 
 from codecov import github_client, groups, log, settings
 
-GITHUB_ACTIONS_LOGIN = 'CI-codecov[bot]'
+GITHUB_CODECOV_LOGIN = 'CI-codecov[bot]'
 
 
 class CannotDeterminePR(Exception):
@@ -83,7 +83,7 @@ def get_my_login(github: github_client.GitHub) -> str:
         # The GitHub actions user cannot access its own details
         # and I'm not sure there's a way to see that we're using
         # the GitHub actions user except noting that it fails
-        return GITHUB_ACTIONS_LOGIN
+        return GITHUB_CODECOV_LOGIN
 
     return response.login
 
