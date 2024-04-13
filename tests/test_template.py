@@ -566,6 +566,34 @@ def test_get_file_url_base():
     )
 
 
+def test_get_file_url_pr_base():
+    filename = pathlib.Path('test_file.py')
+    lines = (1, 10)
+    repo_name = 'my_repo'
+    pr_number = 123
+    base_ref = 'main'
+
+    expected_url = f'https://github.com/{repo_name}/blob/{base_ref}/{str(filename)}#L1-L10'
+    assert (
+        template.get_file_url(filename, lines, True, repo_name=repo_name, pr_number=pr_number, base_ref=base_ref)
+        == expected_url
+    )
+
+
+def test_get_file_url_pr_base_no_lines():
+    filename = pathlib.Path('test_file.py')
+    lines = None
+    repo_name = 'my_repo'
+    pr_number = 123
+    base_ref = 'main'
+
+    expected_url = f'https://github.com/{repo_name}/blob/{base_ref}/{str(filename)}'
+    assert (
+        template.get_file_url(filename, lines, True, repo_name=repo_name, pr_number=pr_number, base_ref=base_ref)
+        == expected_url
+    )
+
+
 def test_get_file_url_pr():
     filename = pathlib.Path('test_file.py')
     lines = (1, 10)

@@ -85,9 +85,6 @@ ignore = ['E501', 'W503', 'W504']
 [tool.pytest.ini_options]
 env = ['APP_ENVIRONMENT = unittest']
 
-[tool.coverage.run]
-include = ['codecov/*']
-
 [tool.coverage.report]
 show_missing = true
 
