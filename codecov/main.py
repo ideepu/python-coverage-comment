@@ -153,7 +153,7 @@ def process_pr(  # pylint: disable=too-many-locals
         log.info(
             'Cannot post comment. This is probably because of body contents reached maximum allowed length in the comment'
         )
-    else:
-        log.debug('Comment created on PR')
+        return 1
 
+    log.debug('Comment created on PR')
     return 0

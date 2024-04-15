@@ -256,6 +256,17 @@ def test_get_diff_coverage_info(make_coverage_obj, added_lines, update_obj, expe
                 pathlib.Path('test.py'): [7],
             },
         ),
+        (
+            'diff --git a/test.py b/test.py\n'
+            'index 1111111..2222222 100644\n'
+            '--- a/test.py\n'
+            '+++ b/test.py\n'
+            '@@ -5,5 +5,7 @@ def calculate_sum(a, b):\n'
+            '     return a + b\n'
+            ' def test_calculate_sum():\n'
+            '     assert calculate_sum(-1, 1) == 0\n',
+            {},
+        ),
     ],
 )
 def test_parse_line_number_diff_line(line_number_diff_line, expected):

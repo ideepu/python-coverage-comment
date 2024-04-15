@@ -20,7 +20,7 @@ lint:
 	pipenv run pre-commit run --all-files
 
 test:
-	pipenv run pytest tests/* --cov=codecov --cov-report=term-missing
+	pipenv run pytest tests/* --cov-branch --cov=codecov --cov-report=term-missing
 
 report:
 	pipenv run pytest tests  --cov-branch --cov=codecov --cov-report=term-missing --cov-report=json:/tmp/report.json
