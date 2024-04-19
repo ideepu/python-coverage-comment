@@ -14,6 +14,12 @@ Permissions needed for the Github Token:
 `Pull requests:read`
 `Pull requests:write`
 
+**install:**
+
+```bash
+pip install python-coverage-comment
+```
+
 **run:**
 
 ```bash
