@@ -8,6 +8,9 @@ def __getattr__(name):
     return getattr(logger, name)
 
 
+# sdfs
+
+
 def setup(debug: bool = False):
     logging.basicConfig(
         level='DEBUG' if debug else 'INFO',

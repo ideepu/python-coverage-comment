@@ -100,7 +100,7 @@ def get_pr_number(github: github_client.GitHub, config: settings.Config) -> int:
             raise CannotGetPullRequest from exc
         except github_client.NotFound:
             log.warning(f'Pull request #{config.GITHUB_PR_NUMBER} does not exist')
-
+    # sdfs
     # If we're not on a PR, we need to find the PR number from the branch name
     if config.GITHUB_REF:
         try:
