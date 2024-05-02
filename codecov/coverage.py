@@ -12,9 +12,6 @@ from collections.abc import Sequence
 from codecov import log
 
 
-# The dataclasses in this module are accessible in the template, which is overridable by the user.
-# As a coutesy, we should do our best to keep the existing fields for backward compatibility,
-# and if we really can't and can't add properties, at least bump the major version.
 @dataclasses.dataclass
 class CoverageMetadata:
     version: str
@@ -43,6 +40,8 @@ class FileCoverage:
     executed_lines: list[int]
     missing_lines: list[int]
     excluded_lines: list[int]
+    executed_branches: list[list[int]] | None
+    missing_branches: list[list[int]] | None
     info: CoverageInfo
 
 
@@ -51,10 +50,6 @@ class Coverage:
     meta: CoverageMetadata
     info: CoverageInfo
     files: dict[pathlib.Path, FileCoverage]
-
-
-# The format for Diff Coverage objects may seem a little weird, because it
-# was originally copied from diff-cover schema.
 
 
 @dataclasses.dataclass
@@ -89,7 +84,7 @@ def compute_coverage(num_covered: int, num_total: int) -> decimal.Decimal:
     return decimal.Decimal(num_covered) / decimal.Decimal(num_total)
 
 
-def get_coverage_info(coverage_path: pathlib.Path) -> tuple[dict, Coverage]:
+def get_coverage_info(coverage_path: pathlib.Path) -> Coverage:
     try:
         with coverage_path.open() as coverage_data:
             json_coverage = json.loads(coverage_data.read())
@@ -100,7 +95,7 @@ def get_coverage_info(coverage_path: pathlib.Path) -> tuple[dict, Coverage]:
         log.error('Invalid JSON format in coverage report file: %s', coverage_path)
         raise
 
-    return json_coverage, extract_info(data=json_coverage)
+    return extract_info(data=json_coverage)
 
 
 def extract_info(data: dict) -> Coverage:
@@ -129,6 +124,8 @@ def extract_info(data: dict) -> Coverage:
                 },
                 "missing_lines": [7],
                 "excluded_lines": [],
+                "executed_branches": [],
+                "missing_branches": [],
             }
         },
         "totals": {
@@ -156,8 +153,10 @@ def extract_info(data: dict) -> Coverage:
             pathlib.Path(path): FileCoverage(
                 path=pathlib.Path(path),
                 excluded_lines=file_data['excluded_lines'],
-                executed_lines=file_data['executed_lines'],
                 missing_lines=file_data['missing_lines'],
+                executed_lines=file_data['executed_lines'],
+                executed_branches=file_data.get('executed_branches'),
+                missing_branches=file_data.get('missing_branches'),
                 info=CoverageInfo(
                     covered_lines=file_data['summary']['covered_lines'],
                     num_statements=file_data['summary']['num_statements'],

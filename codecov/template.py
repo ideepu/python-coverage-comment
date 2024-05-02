@@ -83,6 +83,7 @@ def get_comment_markdown(  # pylint: disable=too-many-arguments,too-many-locals
     base_template: str,
     marker: str,
     subproject_id: str | None = None,
+    branch_coverage: bool = False,
     complete_project_report: bool = False,
     coverage_report_url: str | None = None,
 ):
@@ -128,6 +129,7 @@ def get_comment_markdown(  # pylint: disable=too-many-arguments,too-many-locals
             missing_lines_for_whole_project=missing_lines_for_whole_project,
             subproject_id=subproject_id,
             marker=marker,
+            branch_coverage=branch_coverage,
             complete_project_report=complete_project_report,
             coverage_report_url=coverage_report_url,
         )

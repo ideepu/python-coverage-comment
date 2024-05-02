@@ -66,11 +66,11 @@ def process_pr(  # pylint: disable=too-many-locals
     repo_info: github.RepositoryInfo,
     pr_number: int,
 ) -> int:
-    _, coverage = coverage_module.get_coverage_info(coverage_path=config.COVERAGE_PATH)
+    coverage = coverage_module.get_coverage_info(coverage_path=config.COVERAGE_PATH)
     base_ref = config.GITHUB_BASE_REF or repo_info.default_branch
     pr_diff = github.get_pr_diff(github=gh, repository=config.GITHUB_REPOSITORY, pr_number=pr_number)
     added_lines = coverage_module.parse_diff_output(diff=pr_diff)
-    diff_coverage = coverage_module.get_diff_coverage_info(coverage=coverage, added_lines=added_lines)
+    diff_coverage = coverage_module.get_diff_coverage_info(added_lines=added_lines, coverage=coverage)
 
     if config.ANNOTATE_MISSING_LINES:
         log.info('Generating annotations for missing lines.')
@@ -119,6 +119,7 @@ def process_pr(  # pylint: disable=too-many-locals
             base_template=template.read_template_file('comment.md.j2'),
             marker=marker,
             subproject_id=config.SUBPROJECT_ID,
+            branch_coverage=config.BRANCH_COVERAGE,
             complete_project_report=config.COMPLETE_PROJECT_REPORT,
             coverage_report_url=config.COVERAGE_REPORT_URL,
         )

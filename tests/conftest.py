@@ -85,6 +85,8 @@ def make_coverage() -> Callable[[str, bool], coverage_module.Coverage]:
                         covered_branches=0 if has_branches else None,
                         missing_branches=0 if has_branches else None,
                     ),
+                    executed_branches=[],
+                    missing_branches=[],
                 )
             if set(line.split()) & {
                 'covered',
@@ -206,6 +208,8 @@ def coverage_json():
                 },
                 'missing_lines': [6, 8, 10, 11],
                 'excluded_lines': [],
+                'executed_branches': [[1, 0], [2, 1], [3, 0], [5, 1], [13, 0], [14, 0]],
+                'missing_branches': [[6, 0], [8, 1], [10, 0], [11, 0]],
             }
         },
         'totals': {
