@@ -31,7 +31,10 @@ def str_to_bool(value: str) -> bool:
     return value.lower() in ('1', 'true', 'yes')
 
 
+# sdfs
 # pylint: disable=invalid-name, too-many-instance-attributes
+
+
 @dataclasses.dataclass
 class Config:
     """This object defines the environment variables"""

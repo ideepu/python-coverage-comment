@@ -99,7 +99,7 @@ def get_comment_markdown(  # pylint: disable=too-many-arguments,too-many-locals
         minimum_green=minimum_green,
         minimum_orange=minimum_orange,
     )
-
+    # sdf
     missing_diff_lines = {
         key: list(value)
         for key, value in itertools.groupby(

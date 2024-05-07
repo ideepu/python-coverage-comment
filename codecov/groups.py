@@ -58,3 +58,6 @@ def compute_contiguous_groups(
         return acc
 
     return functools.reduce(reducer, contiguous_groups, [])
+
+
+# sdfs
