@@ -316,6 +316,8 @@ def test_extract_info(coverage_json):
                     covered_branches=1,
                     missing_branches=1,
                 ),
+                executed_branches=[[1, 0], [2, 1], [3, 0], [5, 1], [13, 0], [14, 0]],
+                missing_branches=[[6, 0], [8, 1], [10, 0], [11, 0]],
             )
         },
         info=coverage.CoverageInfo(
@@ -338,7 +340,7 @@ def test_extract_info(coverage_json):
 def test_get_coverage_info(coverage_json):
     with patch('pathlib.Path.open') as mock_open:
         mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_json)
-        _, result = coverage.get_coverage_info(pathlib.Path('path/to/file.json'))
+        result = coverage.get_coverage_info(pathlib.Path('path/to/file.json'))
 
     assert result == coverage.extract_info(coverage_json)
 

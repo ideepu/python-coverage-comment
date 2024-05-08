@@ -47,6 +47,7 @@ class Config:
     SUBPROJECT_ID: str | None = None
     MINIMUM_GREEN: decimal.Decimal = decimal.Decimal('100')
     MINIMUM_ORANGE: decimal.Decimal = decimal.Decimal('70')
+    BRANCH_COVERAGE: bool = False
     SKIP_COVERAGE: bool = False
     ANNOTATE_MISSING_LINES: bool = False
     ANNOTATION_TYPE: str = 'warning'
@@ -76,6 +77,10 @@ class Config:
 
     @classmethod
     def clean_skip_coverage(cls, value: str) -> bool:
+        return str_to_bool(value)
+
+    @classmethod
+    def clean_branch_coverage(cls, value: str) -> bool:
         return str_to_bool(value)
 
     @classmethod

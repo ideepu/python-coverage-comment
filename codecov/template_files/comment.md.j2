@@ -4,9 +4,9 @@
 {% block coverage_badges -%}
 {%- block coverage_evolution_badge -%}
 {%- if coverage %}
-{%- set text = "Coverage of the whole project for this PR is" ~ coverage.info.percent_covered_display ~ "." -%}
+{%- set text = "Coverage of the whole project for this PR is " ~ coverage.info.percent_covered_display ~ "%." -%}
 {%- set color = coverage.info.percent_covered | get_badge_color -%}
-<img title="{{ text }}" src="{{ 'Coverage' | generate_badge(message=coverage.info.percent_covered_display ~ "%", color=color) }}">
+<img title="{{ text }}" src="{{ 'Coverage' | generate_badge(message=coverage.info.percent_covered_display ~ '%', color=color) }}">
 
 {%- endif -%}
 {%- endblock coverage_evolution_badge -%}
@@ -27,6 +27,22 @@
 
 {%- endmacro -%}
 
+{%- macro branches_badge(path, branches_count, base=false) -%}
+{% set text = "The "  ~ path ~ " contains " ~ branches_count ~ " branch" ~ (branches_count | pluralize(plural='es')) ~"." -%}
+{% set color = "008080" -%}
+<td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ '' | generate_badge(message=(branches_count | string), color=color) }}"></a></td>
+
+{%- endmacro -%}
+
+{%- macro missing_branches_badge(path, missing_branches_count, base=false) -%}
+{%- set text = missing_branches_count ~ " branch" ~ (missing_branches_count | pluralize(plural='es')) ~ " missing the coverage in " ~ path ~ "." -%}
+{% if missing_branches_count == 0 -%}
+{%- set color = "brightgreen" -%}
+{% else -%}
+{%- set color = "red" -%}
+{% endif -%}
+<td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ '' | generate_badge(message=(missing_branches_count | string), color=color) }}"></a></td>
+{%- endmacro -%}
 
 {%- macro missing_lines_badge(path, missing_lines_count, base=false) -%}
 {%- set text = missing_lines_count ~ " statement" ~ (statements_count | pluralize) ~ " missing the coverage in " ~ path ~ "." -%}
@@ -36,20 +52,20 @@
 {%- set color = "red" -%}
 {% endif -%}
 <td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ '' | generate_badge(message=(missing_lines_count | string), color=color) }}"></a></td>
-
 {%- endmacro -%}
 
 {%- macro coverage_rate_badge(path, percent_covered, percent_covered_display, covered_statements_count, statements_count, base=false) -%}
-{%- set text = "The coverage rate of " ~ path ~ " is " ~ percent_covered_display ~ " (" ~ covered_statements_count ~ "/" ~ statements_count ~ ")." -%}
+{%- set text = "The coverage rate of " ~ path ~ " is " ~ percent_covered_display ~ "% (" ~ covered_statements_count ~ "/" ~ statements_count ~ ")." -%}
+{%- set label = percent_covered_display ~ "%" -%}
 {%- set message = "(" ~ covered_statements_count ~ "/" ~ statements_count ~ ")" -%}
 {%- set color = percent_covered | get_badge_color -%}
-<td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ percent_covered_display | generate_badge(message=message, color=color) }}"></a></td>
+<td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ label | generate_badge(message=message, color=color) }}"></a></td>
 
 {%- endmacro -%}
 
 {%- macro diff_coverage_rate_badge(path, added_statements_count, covered_statements_count, percent_covered) -%}
 {% if added_statements_count -%}
-{% set text = "In this PR, " ~ (added_statements_count) ~ " new statements are added to " ~ path ~ ", " ~ covered_statements_count ~ " of which are covered (" ~ (percent_covered | pct) ~ ")." -%}
+{% set text = "In this PR, " ~ (added_statements_count) ~ " new statement" ~ (added_statements_count | pluralize) ~ " " ~ (added_statements_count | pluralize(singular='is', plural='are')) ~ " added to " ~ path ~ ", and " ~ covered_statements_count ~ " statement" ~ (covered_statements_count | pluralize) ~  " "~ (covered_statements_count | pluralize(singular='is', plural='are')) ~ " covered (" ~ (percent_covered | pct) ~ ")." -%}
 {% set label = (percent_covered | pct(precision=0)) -%}
 {% set message = "(" ~ covered_statements_count ~ "/" ~ added_statements_count ~ ")" -%}
 {%- set color = (percent_covered | x100 | get_badge_color()) -%}
@@ -70,14 +86,20 @@
 
 _This PR does not seem to contain any modification to coverable code._
 {%- else -%}
-<details><summary>Click to see coverage of changed files</summary><table><thead>
-  <tr><th>File</th><th>Statements</th><th>Missing</th><th>Coverage</th><th>Coverage<br>(new stmts)</th><th>Lines missing</th></tr>
+<details><summary>Click to see coverage of changed files</summary>
+<table>
+<thead>
+  <tr><th>File</th><th>Statements</th><th>Missing</th>{% if branch_coverage %}<th>Branches</th><th>Missing</th>{% endif %}
+  <th><br>Coverage &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</th><th>Coverage &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<br>(new stmts)</th>
+  <th><br>Lines missing &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</th>
+  {% if branch_coverage %}<th><br>Branches missing &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</th>{% endif %}</tr>
 </thead>
 <tbody>
 
 {%- for parent, files_in_folder in files|groupby(attribute="path.parent") -%}
 <tr>
-<td colspan="6">&nbsp;&nbsp;<b>{{ parent }}</b></td>
+<td colspan="{%if branch_coverage%}9{% else -%}6{% endif %}">&nbsp;&nbsp;<b>{{ parent }}</b></td>
+</tr>
 
 {%- for file in files_in_folder -%}
 {%- set path = file.coverage.path -%}
@@ -100,6 +122,24 @@ _This PR does not seem to contain any modification to coverable code._
 ) -}}
 {%- endblock missing_lines_badge_cell -%}
 
+{% if branch_coverage %}
+{#- Branches cell -#}
+{%- block branches_badge_cell scoped -%}
+{{- branches_badge(
+  path=path,
+  branches_count=file.coverage.info.num_branches,
+) -}}
+{%- endblock branches_badge_cell -%}
+
+{#- Missing cell -#}
+{%- block missing_branches_badge_cell scoped -%}
+{{- missing_branches_badge(
+  path=path,
+  missing_branches_count=file.coverage.info.missing_branches,
+) -}}
+{%- endblock missing_branches_badge_cell -%}
+{% endif %}
+
 {#- Coverage rate -#}
 {%- block coverage_rate_badge_cell scoped -%}
 {{- coverage_rate_badge(
@@ -111,7 +151,7 @@ _This PR does not seem to contain any modification to coverable code._
 ) -}}
 {%- endblock coverage_rate_badge_cell -%}
 
-{#- Coverage of added lines -#}
+{#- Coverage of added lines (new stmts) -#}
 {%- block diff_coverage_rate_badge_cell scoped -%}
 {{- diff_coverage_rate_badge(
   path=path,
@@ -121,7 +161,7 @@ _This PR does not seem to contain any modification to coverable code._
 ) -}}
 {%- endblock diff_coverage_rate_badge_cell -%}
 
-{#- Link to missing lines -#}
+{#- Link to lines missing -#}
 {%- block link_to_missing_diff_lines_cell scoped -%}
 <td>
 
@@ -141,6 +181,21 @@ _This PR does not seem to contain any modification to coverable code._
 </td>
 
 {%- endblock link_to_missing_diff_lines_cell -%}
+
+{#- Link to branch missing lines -#}
+{%- if branch_coverage -%}
+{%- block link_to_branches_missing_lines_cell scoped -%}
+<td>
+{%- set comma = joiner() -%}
+{%- for branch in file.coverage.missing_branches -%}
+{{- comma() -}}
+<a href="{{ path | file_url(lines=(branch[0] | abs, branch[1] | abs))}}">{{- branch[0] | abs -}} -> {{- branch[1] | abs -}}</a>
+{%- endfor -%}
+</td>
+{%- endblock link_to_branches_missing_lines_cell -%}
+{%- endif -%}
+</tr>
+
 {%- endfor -%}
 {%- endfor -%}
 </tbody>
@@ -165,6 +220,24 @@ _This PR does not seem to contain any modification to coverable code._
 ) -}}
 {%- endblock missing_lines_badge_total_cell -%}
 
+{% if branch_coverage %}
+{#- Branches cell -#}
+{%- block branches_badge_total_cell scoped -%}
+{{- branches_badge(
+  path="the whole project",
+  branches_count=coverage.info.num_branches,
+) -}}
+{%- endblock branches_badge_total_cell -%}
+
+{#- Missing cell -#}
+{%- block missing_branches_badge_total_cell scoped -%}
+{{- missing_branches_badge(
+  path="the whole project",
+  missing_branches_count=coverage.info.missing_branches,
+) -}}
+{%- endblock missing_branches_badge_total_cell -%}
+{% endif %}
+
 {#- Coverage rate -#}
 {%- block coverage_rate_badge_total_cell scoped -%}
 {{- coverage_rate_badge(
@@ -187,27 +260,18 @@ _This PR does not seem to contain any modification to coverable code._
 {%- endblock diff_coverage_rate_badge_total_cell -%}
 
 <td>&nbsp;</td>
+{% if branch_coverage %}
+<td>&nbsp;</td>
+{% endif %}
 </tr>
 </tfoot>
 </table>
 
 {%- if max_files and count_files > max_files %}
-
 _The report is truncated to {{ max_files }} files out of {{ count_files }}.
-
 {% endif %}
 
-{%- block footer %}
-
-<sub>
-
-This report was generated by <a href="{%- if subproject_id %}{{ subproject_id }}{%- endif -%}">[CI-codecov]</a>
-
-</sub>
 </details>
-
-{% endblock footer -%}
-
 {%- endif -%}
 {%- endblock coverage_by_file %}
 
@@ -220,8 +284,15 @@ This report was generated by <a href="{%- if subproject_id %}{{ subproject_id }}
 
 _No additional project files to report the coverage._
 {%- else -%}
-<details><summary>Click to see whole project coverage</summary><table><thead>
-  <tr><th>File</th><th>Statements</th><th>Missing</th><th>Coverage</th><th>Lines missing</th></tr>
+<details><summary>Click to see whole project coverage</summary>
+<br>
+<table>
+<thead>
+  <tr><th>File</th><th>Statements</th><th>Missing</th>{% if branch_coverage %}<th>Branches</th><th>Missing</th>{% endif %}
+  <th><br>Coverage &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</th>
+  <th><br>Lines missing &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</th>
+  {% if branch_coverage %}<th><br>Branches missing &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</th>{% endif %}
+  </tr>
 </thead>
 <tbody>
 
@@ -246,6 +317,26 @@ _No additional project files to report the coverage._
   base=true,
 ) -}}
 {%- endblock project_missing_lines_badge_cell -%}
+
+{% if branch_coverage %}
+{#- Branches cell -#}
+{%- block project_branches_badge_cell scoped -%}
+{{- branches_badge(
+  path=coverage_file.path,
+  branches_count=coverage_file.coverage.info.num_branches,
+  base=true,
+) -}}
+{%- endblock project_branches_badge_cell -%}
+
+{#- Missing cell -#}
+{%- block project_missing_branches_badge_cell scoped -%}
+{{- missing_branches_badge(
+  path=coverage_file.path,
+  missing_branches_count=coverage_file.coverage.info.missing_branches,
+  base=true,
+) -}}
+{%- endblock project_missing_branches_badge_cell -%}
+{% endif %}
 
 {#- Coverage cell -#}
 {%- block project_coverage_rate_badge_cell scoped -%}
@@ -279,6 +370,21 @@ _No additional project files to report the coverage._
 </td>
 
 {%- endblock project_link_to_missing_lines_cell -%}
+
+{#- Link to branch missing lines -#}
+{%- if branch_coverage -%}
+{%- block project_link_to_branches_missing_lines_cell scoped -%}
+<td>
+{%- set comma = joiner() -%}
+{%- for branch in coverage_file.coverage.missing_branches -%}
+{{- comma() -}}
+<a href="{{ coverage_file.path | file_url(lines=(branch[0] | abs, branch[1] | abs), base=true)}}">{{- branch[0] | abs -}} -> {{- branch[1] | abs -}}</a>
+{%- endfor -%}
+</td>
+{%- endblock project_link_to_branches_missing_lines_cell -%}
+{%- endif -%}
+</tr>
+
 {%- endfor -%}
 </tbody>
 <tfoot>
@@ -302,32 +408,43 @@ _No additional project files to report the coverage._
 ) -}}
 {%- endblock project_missing_lines_badge_total_cell -%}
 
+{% if branch_coverage %}
+{#- Branches cell -#}
+{%- block project_branches_badge_total_cell scoped -%}
+{{- branches_badge(
+  path="the whole project",
+  branches_count=coverage.info.num_branches,
+) -}}
+{%- endblock project_branches_badge_total_cell -%}
+
+{#- Missing cell -#}
+{%- block project_missing_branches_badge_total_cell scoped -%}
+{{- missing_branches_badge(
+  path="the whole project",
+  missing_branches_count=coverage.info.missing_branches,
+) -}}
+{%- endblock project_missing_branches_badge_total_cell -%}
+{% endif %}
+
 {#- Coverage rate -#}
 {%- block project_coverage_rate_badge_total_cell scoped -%}
 {{- coverage_rate_badge(
   path="the whole project",
   percent_covered=coverage.info.percent_covered,
+  percent_covered_display=coverage.info.percent_covered_display,
   covered_statements_count=coverage.info.covered_lines,
   statements_count=coverage.info.num_statements,
 ) -}}
 {%- endblock project_coverage_rate_badge_total_cell -%}
 
 <td>&nbsp;</td>
+{% if branch_coverage %}
+<td>&nbsp;</td>
+{% endif %}
 </tr>
 </tfoot>
 </table>
-
-{%- block project_footer %}
-
-<sub>
-
-This report was generated by <a href="{%- if subproject_id %}{{ subproject_id }}{%- endif -%}">[CI-codecov]</a>
-
-</sub>
 </details>
-
-{% endblock project_footer -%}
-
 {%- endif -%}
 {%- endif -%}
 {%- endblock project_coverage_by_file %}
@@ -337,4 +454,10 @@ This report was generated by <a href="{%- if subproject_id %}{{ subproject_id }}
 #### See the full coverage report of the project <a href="{{ coverage_report_url }}">here</a>.
 {%- endif -%}
 {%- endblock full_coverage_report %}
+
+{%- block footer %}
+<sub>
+This report was generated by <a href="{%- if subproject_id %}{{ subproject_id }}{%- endif -%}">[CI-codecov]</a>
+</sub>
+{% endblock footer -%}
 {{ marker -}}
