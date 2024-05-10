@@ -1,0 +1,176 @@
+{%- if complete_project_report %}
+{%- if not coverage_files %}
+
+_No additional project files to report the coverage._
+{%- else -%}
+<details><summary>Click to see whole project coverage</summary>
+<br>
+<table>
+<thead>
+  <tr><th>File</th><th>Statements</th><th>Missing</th>{% if branch_coverage %}<th>Branches</th><th>Missing</th>{% endif %}
+  <th><br>Coverage &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</th>
+  <th><br>Lines missing &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</th>
+  {% if branch_coverage %}<th><br>Branches missing &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</th>{% endif %}
+  </tr>
+</thead>
+<tbody>
+
+
+{%- for parent, coverage_files_in_folder in coverage_files|groupby(attribute="path.parent") -%}
+<tr>
+<td colspan="{%if branch_coverage%}9{% else -%}6{% endif %}">&nbsp;&nbsp;<b>{{ parent }}</b></td>
+</tr>
+
+{%- for coverage_file in coverage_files_in_folder -%}
+{%- set coverage_file_path = coverage_file.coverage.path -%}
+<tr>
+<td>&nbsp;&nbsp;<a href="{{ coverage_file_path | file_url(base=true) }}">{{ coverage_file_path.name }}</a></td>
+
+{#- Statements cell -#}
+{%- block project_statements_badge_cell scoped -%}
+{{- macros.statements_badge(
+  path=coverage_file_path,
+  statements_count=coverage_file.coverage.info.num_statements,
+  base=true,
+) -}}
+{%- endblock project_statements_badge_cell-%}
+
+{#- Missing cell -#}
+{%- block project_missing_lines_badge_cell scoped -%}
+{{- macros.missing_lines_badge(
+  path=coverage_file_path,
+  missing_lines_count=coverage_file.coverage.info.missing_lines,
+  base=true,
+) -}}
+{%- endblock project_missing_lines_badge_cell -%}
+
+{% if branch_coverage %}
+{#- Branches cell -#}
+{%- block project_branches_badge_cell scoped -%}
+{{- macros.branches_badge(
+  path=coverage_file_path,
+  branches_count=coverage_file.coverage.info.num_branches,
+  base=true,
+) -}}
+{%- endblock project_branches_badge_cell -%}
+
+{#- Missing cell -#}
+{%- block project_missing_branches_badge_cell scoped -%}
+{{- macros.missing_branches_badge(
+  path=coverage_file_path,
+  missing_branches_count=coverage_file.coverage.info.missing_branches,
+  base=true,
+) -}}
+{%- endblock project_missing_branches_badge_cell -%}
+{% endif %}
+
+{#- Coverage cell -#}
+{%- block project_coverage_rate_badge_cell scoped -%}
+{{- macros.coverage_rate_badge(
+  path=coverage_file_path,
+  percent_covered=coverage_file.coverage.info.percent_covered,
+  percent_covered_display=coverage_file.coverage.info.percent_covered_display,
+  covered_statements_count=coverage_file.coverage.info.covered_lines,
+  statements_count=coverage_file.coverage.info.num_statements,
+  base=true,
+) -}}
+{%- endblock project_coverage_rate_badge_cell -%}
+
+{#- Link to missing lines -#}
+{%- block project_link_to_missing_lines_cell scoped -%}
+<td>
+
+{%- set comma = joiner() -%}
+{%- for group in missing_lines_for_whole_project.get(coverage_file_path, []) -%}
+{{- comma() -}}
+<a href="{{ coverage_file_path | file_url(lines=(group.line_start, group.line_end), base=true)}}">
+
+{{- group.line_start -}}
+{%- if group.line_start != group.line_end -%}
+-
+{{- group.line_end -}}
+{%- endif -%}
+</a>
+
+{%- endfor -%}
+</td>
+
+{%- endblock project_link_to_missing_lines_cell -%}
+
+{#- Link to branch missing lines -#}
+{%- if branch_coverage -%}
+{%- block project_link_to_branches_missing_lines_cell scoped -%}
+<td>
+{%- set comma = joiner() -%}
+{%- for branch in coverage_file.coverage.missing_branches -%}
+{{- comma() -}}
+<a href="{{ coverage_file_path | file_url(lines=(branch[0] | abs, branch[1] | abs), base=true)}}">{{- branch[0] | abs -}} -> {{- branch[1] | abs -}}</a>
+{%- endfor -%}
+</td>
+{%- endblock project_link_to_branches_missing_lines_cell -%}
+{%- endif -%}
+</tr>
+
+{%- endfor -%}
+{%- endfor -%}
+</tbody>
+<tfoot>
+<tr>
+<td><b>Project Total</b></td>
+
+
+{#- Statements cell -#}
+{%- block project_statements_badge_total_cell scoped -%}
+{{- macros.statements_badge(
+  path="whole project",
+  statements_count=coverage.info.num_statements,
+) -}}
+{%- endblock project_statements_badge_total_cell -%}
+
+{#- Missing cell -#}
+{%- block project_missing_lines_badge_total_cell scoped -%}
+{{- macros.missing_lines_badge(
+  path="the whole project",
+  missing_lines_count=coverage.info.missing_lines,
+) -}}
+{%- endblock project_missing_lines_badge_total_cell -%}
+
+{% if branch_coverage %}
+{#- Branches cell -#}
+{%- block project_branches_badge_total_cell scoped -%}
+{{- macros.branches_badge(
+  path="the whole project",
+  branches_count=coverage.info.num_branches,
+) -}}
+{%- endblock project_branches_badge_total_cell -%}
+
+{#- Missing cell -#}
+{%- block project_missing_branches_badge_total_cell scoped -%}
+{{- macros.missing_branches_badge(
+  path="the whole project",
+  missing_branches_count=coverage.info.missing_branches,
+) -}}
+{%- endblock project_missing_branches_badge_total_cell -%}
+{% endif %}
+
+{#- Coverage rate -#}
+{%- block project_coverage_rate_badge_total_cell scoped -%}
+{{- macros.coverage_rate_badge(
+  path="the whole project",
+  percent_covered=coverage.info.percent_covered,
+  percent_covered_display=coverage.info.percent_covered_display,
+  covered_statements_count=coverage.info.covered_lines,
+  statements_count=coverage.info.num_statements,
+) -}}
+{%- endblock project_coverage_rate_badge_total_cell -%}
+
+<td>&nbsp;</td>
+{% if branch_coverage %}
+<td>&nbsp;</td>
+{% endif %}
+</tr>
+</tfoot>
+</table>
+</details>
+{%- endif -%}
+{%- endif -%}

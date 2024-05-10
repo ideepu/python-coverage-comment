@@ -87,7 +87,7 @@ def get_comment_markdown(  # pylint: disable=too-many-arguments,too-many-locals
     complete_project_report: bool = False,
     coverage_report_url: str | None = None,
 ):
-    env = SandboxedEnvironment()
+    env = SandboxedEnvironment(loader=jinja2.FileSystemLoader('codecov/template_files/'))
     env.filters['pct'] = pct
     env.filters['x100'] = x100
     env.filters['generate_badge'] = badge.get_static_badge_url

@@ -1,1 +1,4 @@
 include codecov/template_files/comment.md.j2
+include codecov/template_files/pr.md.j2
+include codecov/template_files/project.md.j2
+include codecov/template_files/macros.md.j2
