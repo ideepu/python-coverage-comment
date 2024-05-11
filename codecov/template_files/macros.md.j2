@@ -1,0 +1,54 @@
+{%- macro statements_badge(path, statements_count, base=false) -%}
+{% set text = "The "  ~ path ~ " contains " ~ statements_count ~ " statement" ~ (statements_count | pluralize) ~"." -%}
+{% set color = "007ec6" -%}
+<td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ '' | generate_badge(message=(statements_count | string), color=color) }}"></a></td>
+{%- endmacro -%}
+
+{%- macro branches_badge(path, branches_count, base=false) -%}
+{% set text = "The "  ~ path ~ " contains " ~ branches_count ~ " branch" ~ (branches_count | pluralize(plural='es')) ~"." -%}
+{% set color = "008080" -%}
+<td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ '' | generate_badge(message=(branches_count | string), color=color) }}"></a></td>
+{%- endmacro -%}
+
+{%- macro missing_branches_badge(path, missing_branches_count, base=false) -%}
+{%- set text = missing_branches_count ~ " branch" ~ (missing_branches_count | pluralize(plural='es')) ~ " missing the coverage in " ~ path ~ "." -%}
+{% if missing_branches_count == 0 -%}
+{%- set color = "brightgreen" -%}
+{% else -%}
+{%- set color = "red" -%}
+{% endif -%}
+<td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ '' | generate_badge(message=(missing_branches_count | string), color=color) }}"></a></td>
+{%- endmacro -%}
+
+{%- macro missing_lines_badge(path, missing_lines_count, base=false) -%}
+{%- set text = missing_lines_count ~ " statement" ~ (statements_count | pluralize) ~ " missing the coverage in " ~ path ~ "." -%}
+{% if missing_lines_count == 0 -%}
+{%- set color = "brightgreen" -%}
+{% else -%}
+{%- set color = "red" -%}
+{% endif -%}
+<td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ '' | generate_badge(message=(missing_lines_count | string), color=color) }}"></a></td>
+{%- endmacro -%}
+
+{%- macro coverage_rate_badge(path, percent_covered, percent_covered_display, covered_statements_count, statements_count, base=false) -%}
+{%- set text = "The coverage rate of " ~ path ~ " is " ~ percent_covered_display ~ "% (" ~ covered_statements_count ~ "/" ~ statements_count ~ ")." -%}
+{%- set label = percent_covered_display ~ "%" -%}
+{%- set message = "(" ~ covered_statements_count ~ "/" ~ statements_count ~ ")" -%}
+{%- set color = percent_covered | get_badge_color -%}
+<td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ label | generate_badge(message=message, color=color) }}"></a></td>
+{%- endmacro -%}
+
+{%- macro diff_coverage_rate_badge(path, added_statements_count, covered_statements_count, percent_covered) -%}
+{% if added_statements_count -%}
+{% set text = "In this PR, " ~ (added_statements_count) ~ " new statement" ~ (added_statements_count | pluralize) ~ " " ~ (added_statements_count | pluralize(singular='is', plural='are')) ~ " added to " ~ path ~ ", and " ~ covered_statements_count ~ " statement" ~ (covered_statements_count | pluralize) ~  " "~ (covered_statements_count | pluralize(singular='is', plural='are')) ~ " covered (" ~ (percent_covered | pct) ~ ")." -%}
+{% set label = (percent_covered | pct(precision=0)) -%}
+{% set message = "(" ~ covered_statements_count ~ "/" ~ added_statements_count ~ ")" -%}
+{%- set color = (percent_covered | x100 | get_badge_color()) -%}
+{% else -%}
+{% set text = "This PR does not seem to add statements to " ~ path ~ "." -%}
+{% set label = "" -%}
+{%- set color = "grey" -%}
+{% set message = "N/A" -%}
+{% endif -%}
+<td align="center"><a href="{{ path | file_url }}"><img title="{{ text }}" src="{{ label | generate_badge(message=message, color=color) }}"></a></td>
+{%- endmacro -%}
