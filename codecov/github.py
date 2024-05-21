@@ -35,10 +35,10 @@ class Annotation:
     message: str
 
     def __str__(self) -> str:
-        return f'{self.message_type} {self.message} in {self.file}:{self.line_start}-{self.line_end}'
+        return f'{self.message_type.upper()} {self.message} in {self.file}:{self.line_start}-{self.line_end}'
 
     def __repr__(self) -> str:
-        return f'{self.message_type} {self.message} in {self.file}:{self.line_start}-{self.line_end}'
+        return f'{self.message_type.upper()} {self.message} in {self.file}:{self.line_start}-{self.line_end}'
 
     def to_dict(self):
         return {
@@ -171,26 +171,28 @@ def post_comment(  # pylint: disable=too-many-arguments
 def create_missing_coverage_annotations(
     annotation_type: str,
     annotations: Iterable[groups.Group],
+    branch: bool = False,
 ) -> list[Annotation]:
     """
     Create annotations for lines with missing coverage.
 
     annotation_type: The type of annotation to create. Can be either "error" or "warning" or "notice".
     annotations: A list of tuples of the form (file, line_start, line_end)
+    branch: Whether to create branch coverage annotations or not
     """
     formatted_annotations: list[Annotation] = []
     for group in annotations:
         if group.line_start == group.line_end:
-            message = f'Missing coverage on line {group.line_start}'
+            message = f'Missing {"branch " if branch else ""}coverage on line {group.line_start}'
         else:
-            message = f'Missing coverage on lines {group.line_start}-{group.line_end}'
+            message = f'Missing {"branch " if branch else ""}coverage on lines {group.line_start}-{group.line_end}'
 
         formatted_annotations.append(
             Annotation(
                 file=group.file,
                 line_start=group.line_start,
                 line_end=group.line_end,
-                title='Missing coverage',
+                title=f'Missing {"branch " if branch else ""}coverage',
                 message_type=annotation_type,
                 message=message,
             )

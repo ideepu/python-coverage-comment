@@ -29,7 +29,7 @@ def main():
         sys.exit(exit_code)
 
     except Exception:  # pylint: disable=broad-except
-        log.exception(
+        log.error(
             'Critical error. This error possibly occurred because the permissions of the workflow are set incorrectly.'
         )
         sys.exit(1)
@@ -79,7 +79,25 @@ def process_pr(  # pylint: disable=too-many-locals
             annotation_type=config.ANNOTATION_TYPE,
             annotations=annotations,
         )
+
+        if config.BRANCH_COVERAGE:
+            branch_annotations = diff_grouper.get_branch_missing_groups(coverage=coverage, diff_coverage=diff_coverage)
+            formatted_annotations.extend(
+                github.create_missing_coverage_annotations(
+                    annotation_type=config.ANNOTATION_TYPE,
+                    annotations=branch_annotations,
+                    branch=True,
+                )
+            )
+
+        # Print to console
+        yellow = '\033[93m'
+        reset = '\033[0m'
+        print(yellow, end='')
         print(*formatted_annotations, sep='\n')
+        print(reset, end='')
+
+        # Save to file
         if config.ANNOTATIONS_OUTPUT_PATH:
             log.info('Writing annotations to file.')
             with config.ANNOTATIONS_OUTPUT_PATH.open('w+') as annotations_file:
@@ -133,7 +151,7 @@ def process_pr(  # pylint: disable=too-many-locals
         )
         return 1
     except template.TemplateError:
-        log.exception(
+        log.error(
             'There was a rendering error when computing the text of the comment to post '
             "on the PR. Please see the traceback, in particular if you're using a custom "
             'template.'
