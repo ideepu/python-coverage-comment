@@ -56,6 +56,40 @@ def test_process_pr_skip_coverage_with_annotations(
 
 
 @mock.patch('pathlib.Path.open')
+@mock.patch('codecov.main.template.read_template_file')
+@mock.patch('codecov.main.github.post_comment')
+def test_process_branch_coverage_in_annotations(
+    mock_post_comment: mock.Mock,
+    mock_read_template_file: mock.Mock,
+    mock_open: mock.Mock,
+    base_config,
+    gh,
+    coverage_json,
+    session,
+    caplog,
+):
+    config = base_config(
+        ANNOTATE_MISSING_LINES=True,
+        BRANCH_COVERAGE=True,
+    )
+    caplog.set_level('INFO')
+    mock_read_template_file.return_value = """
+        {% block foo %}foo{% endblock foo %}
+        {{ marker }}
+        """
+    mock_post_comment.return_value = None
+    mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_json)
+    diff_data = 'diff --git a/file.py b/file.py\nindex 1234567..abcdefg 100644\n--- a/file.py\n+++ b/file.py\n@@ -1,2 +1,2 @@\n-foo\n+bar\n-baz\n+qux\n'
+    session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
+    session.register('GET', '/user')(json={'login': 'foo'})
+
+    repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
+    result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
+
+    assert result == 0
+
+
+@mock.patch('pathlib.Path.open')
 @mock.patch('codecov.template.read_template_file')
 def test_process_pr_with_annotations_missing_marker_error(
     mock_read_template_file: mock.Mock,
