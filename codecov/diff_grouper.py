@@ -22,11 +22,49 @@ def get_missing_groups(
         }
         # Lines that should be considered for filling a gap, unless
         # they are separators.
-        # The first line is UTF-8 encoding declaration, which is not a separator.
-        joiners = set(range(2, coverage_file.info.num_statements)) - separators
+        joiners = set(range(1, coverage_file.info.num_statements)) - separators
 
         for start, end in groups.compute_contiguous_groups(
             values=coverage_file.missing_lines,
+            separators=separators,
+            joiners=joiners,
+            max_gap=MAX_ANNOTATION_GAP,
+        ):
+            yield groups.Group(
+                file=path,
+                line_start=start,
+                line_end=end,
+            )
+
+
+def flatten_branches(branches: list[list[int]] | None) -> list[int]:
+    flattened_branches: list[int] = []
+    if not branches:
+        return flattened_branches
+
+    for branch in branches:
+        start, end = abs(branch[0]), abs(branch[1])
+        if start == end:
+            flattened_branches.append(start)
+        else:
+            flattened_branches.extend(range(min(start, end), max(start, end) + 1))
+    return flattened_branches
+
+
+def get_branch_missing_groups(
+    coverage: coverage_module.Coverage,
+    diff_coverage: coverage_module.DiffCoverage,
+) -> Iterable[groups.Group]:
+    for path, _ in diff_coverage.files.items():
+        coverage_file = coverage.files[path]
+        separators = {
+            *flatten_branches(coverage_file.executed_branches),
+            *coverage_file.excluded_lines,
+        }
+        joiners = set(range(1, coverage_file.info.num_statements)) - separators
+
+        for start, end in groups.compute_contiguous_groups(
+            values=flatten_branches(branches=coverage_file.missing_branches),
             separators=separators,
             joiners=joiners,
             max_gap=MAX_ANNOTATION_GAP,
@@ -44,17 +82,10 @@ def get_diff_missing_groups(
 ) -> Iterable[groups.Group]:
     for path, diff_file in diff_coverage.files.items():
         coverage_file = coverage.files[path]
-
-        # Lines that are covered or excluded should not be considered for
-        # filling a gap between violation groups.
-        # (so, lines that can appear in a gap are lines that are missing, or
-        # lines that do not contain code: blank lines or lines containing comments)
         separators = {
             *coverage_file.executed_lines,
             *coverage_file.excluded_lines,
         }
-        # Lines that are added should be considered for filling a gap, unless
-        # they are separators.
         joiners = set(diff_file.added_lines) - separators
 
         for start, end in groups.compute_contiguous_groups(

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name
-# mypy: disable-error-code="operator"
+# mypy: disable-error-code="operator, union-attr"
 from __future__ import annotations
 
 import datetime
@@ -113,13 +113,16 @@ def make_coverage() -> Callable[[str, bool], coverage_module.Coverage]:
             if has_branches and 'branch' in line:
                 coverage_obj.files[current_file].info.num_branches += 1
                 coverage_obj.info.num_branches += 1
+                coverage_obj.files[current_file].executed_branches.append([line_number, line_number + 1])
                 if 'branch partial' in line:
+                    coverage_obj.files[current_file].missing_branches.append([line_number, line_number + 1])
                     coverage_obj.files[current_file].info.num_partial_branches += 1
                     coverage_obj.info.num_partial_branches += 1
                 elif 'branch covered' in line:
                     coverage_obj.files[current_file].info.covered_branches += 1
                     coverage_obj.info.covered_branches += 1
                 elif 'branch missing' in line:
+                    coverage_obj.files[current_file].missing_branches.append([line_number, line_number + 1])
                     coverage_obj.files[current_file].info.missing_branches += 1
                     coverage_obj.info.missing_branches += 1
 
@@ -250,13 +253,17 @@ def coverage_obj_more_files(make_coverage):
 
 
         missing
+        branch partial
         covered
+        branch partial
         missing
         missing
 
         missing
+        branch missing
         covered
         covered
+        branch covered
         """
     )
 
