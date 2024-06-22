@@ -67,6 +67,8 @@ def process_pr(  # pylint: disable=too-many-locals
     pr_number: int,
 ) -> int:
     coverage = coverage_module.get_coverage_info(coverage_path=config.COVERAGE_PATH)
+    if config.BRANCH_COVERAGE:
+        coverage = diff_grouper.group_branches(coverage=coverage)
     base_ref = config.GITHUB_BASE_REF or repo_info.default_branch
     pr_diff = github.get_pr_diff(github=gh, repository=config.GITHUB_REPOSITORY, pr_number=pr_number)
     added_lines = coverage_module.parse_diff_output(diff=pr_diff)

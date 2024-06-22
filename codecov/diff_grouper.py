@@ -57,23 +57,32 @@ def get_branch_missing_groups(
 ) -> Iterable[groups.Group]:
     for path, _ in diff_coverage.files.items():
         coverage_file = coverage.files[path]
-        separators = {
-            *flatten_branches(coverage_file.executed_branches),
-            *coverage_file.excluded_lines,
-        }
-        joiners = set(range(1, coverage_file.info.num_statements)) - separators
-
-        for start, end in groups.compute_contiguous_groups(
-            values=flatten_branches(branches=coverage_file.missing_branches),
-            separators=separators,
-            joiners=joiners,
-            max_gap=MAX_ANNOTATION_GAP,
-        ):
+        for start, end in coverage_file.missing_branches or []:
             yield groups.Group(
                 file=path,
                 line_start=start,
                 line_end=end,
             )
+
+
+def group_branches(coverage: coverage_module.Coverage) -> coverage_module.Coverage:
+    for file_coverage in coverage.files.values():
+        separators = {
+            *flatten_branches(file_coverage.executed_branches),
+            *file_coverage.excluded_lines,
+        }
+        joiners = set(range(1, file_coverage.info.num_statements)) - separators
+
+        file_coverage.missing_branches = [
+            [start, end]
+            for start, end in groups.compute_contiguous_groups(
+                values=flatten_branches(branches=file_coverage.missing_branches),
+                separators=separators,
+                joiners=joiners,
+                max_gap=MAX_ANNOTATION_GAP,
+            )
+        ]
+    return coverage
 
 
 def get_diff_missing_groups(
