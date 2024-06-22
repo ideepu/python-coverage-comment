@@ -6,7 +6,7 @@ from unittest import mock
 
 import pytest
 
-from codecov import github, main
+from codecov import diff_grouper, github, main
 
 
 @mock.patch('pathlib.Path.open')
@@ -23,6 +23,7 @@ def test_process_pr_skip_coverage(
     mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_json)
     diff_data = 'diff --git a/file.py b/file.py\nindex 1234567..abcdefg 100644\n--- a/file.py\n+++ b/file.py\n@@ -1,2 +1,2 @@\n-foo\n+bar\n-baz\n+qux\n'
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
+    session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
     repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
     result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
@@ -48,6 +49,7 @@ def test_process_pr_skip_coverage_with_annotations(
     mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_json)
     diff_data = 'diff --git a/file.py b/file.py\nindex 1234567..abcdefg 100644\n--- a/file.py\n+++ b/file.py\n@@ -1,2 +1,2 @@\n-foo\n+bar\n-baz\n+qux\n'
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
+    session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
     repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
     result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
@@ -73,15 +75,26 @@ def test_process_branch_coverage_in_annotations(
         BRANCH_COVERAGE=True,
     )
     caplog.set_level('INFO')
+    annotations = [
+        github.Annotation(
+            file=pathlib.Path('file.py'),
+            line_start=10,
+            line_end=10,
+            title='Error',
+            message_type='warning',
+            message='Error',
+        )
+    ]
     mock_read_template_file.return_value = """
         {% block foo %}foo{% endblock foo %}
         {{ marker }}
         """
     mock_post_comment.return_value = None
     mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_json)
+    github.create_missing_coverage_annotations = mock.Mock(return_value=annotations)
     diff_data = 'diff --git a/file.py b/file.py\nindex 1234567..abcdefg 100644\n--- a/file.py\n+++ b/file.py\n@@ -1,2 +1,2 @@\n-foo\n+bar\n-baz\n+qux\n'
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
-    session.register('GET', '/user')(json={'login': 'foo'})
+    session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
     repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
     result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
@@ -104,7 +117,7 @@ def test_process_pr_with_annotations_missing_marker_error(
     mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_json)
     diff_data = 'diff --git a/file.py b/file.py\nindex 1234567..abcdefg 100644\n--- a/file.py\n+++ b/file.py\n@@ -1,2 +1,2 @@\n-foo\n+bar\n-baz\n+qux\n'
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
-    session.register('GET', '/user')(json={'login': 'foo'})
+    session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
     repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
     result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
@@ -135,7 +148,7 @@ def test_process_pr_with_annotations_template_error(
     mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_json)
     diff_data = 'diff --git a/file.py b/file.py\nindex 1234567..abcdefg 100644\n--- a/file.py\n+++ b/file.py\n@@ -1,2 +1,2 @@\n-foo\n+bar\n-baz\n+qux\n'
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
-    session.register('GET', '/user')(json={'login': 'foo'})
+    session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
     repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
     result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
@@ -168,7 +181,7 @@ def test_process_pr_with_annotations_cannot_post(
     mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_json)
     diff_data = 'diff --git a/file.py b/file.py\nindex 1234567..abcdefg 100644\n--- a/file.py\n+++ b/file.py\n@@ -1,2 +1,2 @@\n-foo\n+bar\n-baz\n+qux\n'
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
-    session.register('GET', '/user')(json={'login': 'foo'})
+    session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
     repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
     result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
@@ -196,21 +209,100 @@ def test_process_pr_with_annotations(
         SUBPROJECT_ID='sub_project',
     )
     caplog.set_level('DEBUG')
+    annotations = [
+        github.Annotation(
+            file=pathlib.Path('file.py'),
+            line_start=10,
+            line_end=10,
+            title='Error',
+            message_type='warning',
+            message='Error',
+        )
+    ]
     mock_read_template_file.return_value = """
         {% block foo %}foo{% endblock foo %}
         {{ marker }}
         """
     mock_post_comment.return_value = None
     mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_json)
+    github.create_missing_coverage_annotations = mock.Mock(return_value=annotations)
     diff_data = 'diff --git a/file.py b/file.py\nindex 1234567..abcdefg 100644\n--- a/file.py\n+++ b/file.py\n@@ -1,2 +1,2 @@\n-foo\n+bar\n-baz\n+qux\n'
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
-    session.register('GET', '/user')(json={'login': 'foo'})
+    session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
     repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
     result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
 
     assert result == 0
     assert caplog.records[-1].message == 'Comment created on PR'
+
+
+@mock.patch('pathlib.Path.open')
+@mock.patch('codecov.main.template.read_template_file')
+@mock.patch('codecov.main.github.post_comment')
+def test_process_pr_with_annotations_to_branch(
+    mock_post_comment: mock.Mock,
+    mock_read_template_file: mock.Mock,
+    mock_open: mock.Mock,
+    base_config,
+    gh,
+    coverage_json,
+    session,
+    caplog,
+):
+    config = base_config(
+        ANNOTATE_MISSING_LINES=True,
+        ANNOTATIONS_OUTPUT_PATH=pathlib.Path(tempfile.mkstemp(suffix='.json')[1]),
+        SUBPROJECT_ID='sub_project',
+        ANNOTATIONS_DATA_BRANCH='annotations-data',
+    )
+    caplog.set_level('DEBUG')
+    annotations = [
+        github.Annotation(
+            file=pathlib.Path('file.py'),
+            line_start=10,
+            line_end=10,
+            title='Error',
+            message_type='warning',
+            message='Error',
+        )
+    ]
+    mock_read_template_file.return_value = """
+        {% block foo %}foo{% endblock foo %}
+        {{ marker }}
+        """
+    mock_post_comment.return_value = None
+    mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_json)
+    github.create_missing_coverage_annotations = mock.Mock(return_value=annotations)
+    github.write_annotations_to_branch = mock.Mock(return_value=None)
+    diff_data = 'diff --git a/file.py b/file.py\nindex 1234567..abcdefg 100644\n--- a/file.py\n+++ b/file.py\n@@ -1,2 +1,2 @@\n-foo\n+bar\n-baz\n+qux\n'
+    session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
+    session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
+
+    repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
+    result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
+
+    assert result == 0
+    assert caplog.records[-1].message == 'Comment created on PR'
+
+
+@mock.patch('pathlib.Path.open')
+def test_process_pr_generate_annotations(mock_open: mock.Mock, gh, base_config, coverage_obj, session, coverage_json):
+    config = base_config(BRANCH_COVERAGE=True)
+    main.generate_annotations = mock.Mock(side_effect=github.CannotGetBranch)
+    mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_json)
+    diff_grouper.group_branches = mock.Mock(return_value=coverage_obj)
+    diff_data = 'diff --git a/file.py b/file.py\nindex 1234567..abcdefg 100644\n--- a/file.py\n+++ b/file.py\n@@ -1,2 +1,2 @@\n-foo\n+bar\n-baz\n+qux\n'
+    session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
+    session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
+
+    result = main.process_pr(
+        config=config,
+        repo_info=github.RepositoryInfo(default_branch='main', visibility='public'),
+        pr_number=123,
+        gh=gh,
+    )
+    assert result == 1
 
 
 @mock.patch('codecov.main.settings.Config.from_environ')

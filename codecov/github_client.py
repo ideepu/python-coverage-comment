@@ -63,6 +63,7 @@ class GitHub:
             headers=headers,
             **requests_kwargs,
         )
+        contents: str | bytes | JsonObject
         if use_bytes:
             contents = response.content
         elif use_text:
@@ -76,6 +77,8 @@ class GitHub:
             cls: type[ApiError] = {
                 403: Forbidden,
                 404: NotFound,
+                409: Conflict,
+                422: ValidationFailed,
             }.get(exc.response.status_code, ApiError)
 
             raise cls(str(contents)) from exc
@@ -112,4 +115,12 @@ class NotFound(ApiError):
 
 
 class Forbidden(ApiError):
+    pass
+
+
+class Conflict(ApiError):
+    pass
+
+
+class ValidationFailed(ApiError):
     pass

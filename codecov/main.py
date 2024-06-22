@@ -41,8 +41,8 @@ def action(config: settings.Config, github_session: httpx.Client) -> int:
     try:
         pr_number = github.get_pr_number(github=gh, config=config)
     except github.CannotGetPullRequest:
-        log.debug('Cannot get pull request number. Exiting.', exc_info=True)
-        log.info(
+        log.error('Cannot get pull request number. Exiting.', exc_info=True)
+        log.error(
             'This worflow is not triggered on a pull_request event, '
             "nor on a push event on a branch. Consequently, there's nothing to do. "
             'Exiting.'
@@ -74,37 +74,18 @@ def process_pr(  # pylint: disable=too-many-locals
     added_lines = coverage_module.parse_diff_output(diff=pr_diff)
     diff_coverage = coverage_module.get_diff_coverage_info(added_lines=added_lines, coverage=coverage)
 
-    if config.ANNOTATE_MISSING_LINES:
-        log.info('Generating annotations for missing lines.')
-        annotations = diff_grouper.get_diff_missing_groups(coverage=coverage, diff_coverage=diff_coverage)
-        formatted_annotations = github.create_missing_coverage_annotations(
-            annotation_type=config.ANNOTATION_TYPE,
-            annotations=annotations,
+    user: github.User = github.get_my_login(github=gh)
+    try:
+        generate_annotations(
+            config=config, user=user, pr_number=pr_number, gh=gh, coverage=coverage, diff_coverage=diff_coverage
         )
-
-        if config.BRANCH_COVERAGE:
-            branch_annotations = diff_grouper.get_branch_missing_groups(coverage=coverage, diff_coverage=diff_coverage)
-            formatted_annotations.extend(
-                github.create_missing_coverage_annotations(
-                    annotation_type=config.ANNOTATION_TYPE,
-                    annotations=branch_annotations,
-                    branch=True,
-                )
-            )
-
-        # Print to console
-        yellow = '\033[93m'
-        reset = '\033[0m'
-        print(yellow, end='')
-        print(*formatted_annotations, sep='\n')
-        print(reset, end='')
-
-        # Save to file
-        if config.ANNOTATIONS_OUTPUT_PATH:
-            log.info('Writing annotations to file.')
-            with config.ANNOTATIONS_OUTPUT_PATH.open('w+') as annotations_file:
-                json.dump(formatted_annotations, annotations_file, cls=github.AnnotationEncoder)
-        log.info('Annotations generated.')
+    except github.CannotGetBranch:
+        log.error(
+            'Cannot retrieve the annotation data branch.'
+            'Please ensure it exists and that you have sufficient permissions and branch protection is disabled. Exiting.',
+            exc_info=True,
+        )
+        return 1
 
     if config.SKIP_COVERAGE:
         log.info('Skipping coverage report generation')
@@ -163,7 +144,7 @@ def process_pr(  # pylint: disable=too-many-locals
     try:
         github.post_comment(
             github=gh,
-            me=github.get_my_login(github=gh),
+            user=user,
             repository=config.GITHUB_REPOSITORY,
             pr_number=pr_number,
             contents=comment,
@@ -178,3 +159,55 @@ def process_pr(  # pylint: disable=too-many-locals
 
     log.debug('Comment created on PR')
     return 0
+
+
+def generate_annotations(  # pylint: disable=too-many-arguments
+    config: settings.Config, user: github.User, pr_number: int, gh: github_client.GitHub, coverage, diff_coverage
+):
+    if not config.ANNOTATE_MISSING_LINES:
+        return
+
+    log.info('Generating annotations for missing lines.')
+    annotations = diff_grouper.get_diff_missing_groups(coverage=coverage, diff_coverage=diff_coverage)
+    formatted_annotations = github.create_missing_coverage_annotations(
+        annotation_type=config.ANNOTATION_TYPE,
+        annotations=annotations,
+    )
+
+    if config.BRANCH_COVERAGE:
+        branch_annotations = diff_grouper.get_branch_missing_groups(coverage=coverage, diff_coverage=diff_coverage)
+        formatted_annotations.extend(
+            github.create_missing_coverage_annotations(
+                annotation_type=config.ANNOTATION_TYPE,
+                annotations=branch_annotations,
+                branch=True,
+            )
+        )
+
+    if not formatted_annotations:
+        log.info('No annotations to generate. Exiting.')
+        return
+
+    # Print to console
+    yellow = '\033[93m'
+    reset = '\033[0m'
+    print(yellow, end='')
+    print(*formatted_annotations, sep='\n')
+    print(reset, end='')
+
+    # Save to file
+    if config.ANNOTATIONS_OUTPUT_PATH:
+        log.info('Writing annotations to file.')
+        with config.ANNOTATIONS_OUTPUT_PATH.open('w+') as annotations_file:
+            json.dump(formatted_annotations, annotations_file, cls=github.AnnotationEncoder)
+
+    if config.ANNOTATIONS_DATA_BRANCH:
+        log.info('Writing annotations to branch.')
+        github.write_annotations_to_branch(
+            github=gh,
+            user=user,
+            pr_number=pr_number,
+            config=config,
+            annotations=formatted_annotations,
+        )
+    log.info('Annotations generated.')
