@@ -1,6 +1,6 @@
 [project]
 name = "python-coverage-comment"
-version = "2.0"
+version = "2.1"
 description = "Create a Coverage report comment on Github PR"
 readme = "README.md"
 license = { file = "LICENSE" }
