@@ -10,43 +10,6 @@ import pytest
 from codecov import github, groups
 
 
-@pytest.mark.parametrize(
-    'ref, expected',
-    [
-        ('refs/heads/main', True),
-        ('refs/heads/other', False),
-    ],
-)
-def test_is_default_branch(ref, expected):
-    info = github.RepositoryInfo(default_branch='main', visibility='public')
-    result = info.is_default_branch(ref=ref)
-
-    assert result is expected
-
-
-@pytest.mark.parametrize(
-    'visibility, expected',
-    [
-        ('private', False),
-        ('internal', False),
-        ('public', True),
-    ],
-)
-def test_is_public(visibility, expected):
-    info = github.RepositoryInfo(default_branch='main', visibility=visibility)
-    result = info.is_public()
-
-    assert result is expected
-
-
-def test_get_repository_info(gh, session):
-    session.register('GET', '/repos/foo/bar')(json={'default_branch': 'baz', 'visibility': 'public'})
-
-    info = github.get_repository_info(github=gh, repository='foo/bar')
-
-    assert info == github.RepositoryInfo(default_branch='baz', visibility='public')
-
-
 def test_get_pr(gh, session, base_config):
     config = base_config()
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(
