@@ -52,6 +52,7 @@ class Config:
     ANNOTATE_MISSING_LINES: bool = False
     ANNOTATION_TYPE: str = 'warning'
     ANNOTATIONS_OUTPUT_PATH: pathlib.Path | None = None
+    ANNOTATIONS_DATA_BRANCH: str | None = None
     MAX_FILES_IN_COMMENT: int = 25
     COMPLETE_PROJECT_REPORT: bool = False
     COVERAGE_REPORT_URL: str | None = None

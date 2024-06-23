@@ -14,6 +14,11 @@ Permissions needed for the Github Token:
 `Pull requests:read`
 `Pull requests:write`
 
+If you have given `ANNOTATIONS_DATA_BRANCH` branch then Github Token also requires content write permissions.
+Read more on how to use this here.
+
+`Contents:write`
+
 **install:**
 
 ```bash

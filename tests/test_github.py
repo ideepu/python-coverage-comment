@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+import base64
 import json
 import pathlib
 
@@ -126,15 +127,15 @@ def test_get_pr_diff_not_found(gh, session, base_config):
 
 
 def test_get_my_login(gh, session):
-    session.register('GET', '/user')(json={'login': 'foo'})
+    session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
     result = github.get_my_login(github=gh)
-    assert result == 'foo'
+    assert result == github.User(name='bar', email='baz', login='foo')
 
 
 def test_get_my_login_github_bot(gh, session):
     session.register('GET', '/user')(status_code=403)
     result = github.get_my_login(github=gh)
-    assert result == github.GITHUB_CODECOV_LOGIN
+    assert result == github.User(name=github.GITHUB_CODECOV_LOGIN, email='', login=github.GITHUB_CODECOV_LOGIN)
 
 
 @pytest.mark.parametrize(
@@ -151,7 +152,7 @@ def test_post_comment_create(gh, session, existing_comments):
 
     github.post_comment(
         github=gh,
-        me='foo',
+        user=github.User(name='foo', email='bar', login='foo'),
         repository='foo/bar',
         pr_number=123,
         contents='hi!',
@@ -166,7 +167,7 @@ def test_post_comment_content_too_long_error(gh, session):
     with pytest.raises(github.CannotPostComment):
         github.post_comment(
             github=gh,
-            me='foo',
+            user=github.User(name='foo', email='bar', login='foo'),
             repository='foo/bar',
             pr_number=123,
             contents='a' * 65537,
@@ -181,7 +182,7 @@ def test_post_comment_create_error(gh, session):
     with pytest.raises(github.CannotPostComment):
         github.post_comment(
             github=gh,
-            me='foo',
+            user=github.User(name='foo', email='bar', login='foo'),
             repository='foo/bar',
             pr_number=123,
             contents='hi!',
@@ -200,7 +201,7 @@ def test_post_comment_update(gh, session):
 
     github.post_comment(
         github=gh,
-        me='foo',
+        user=github.User(name='foo', email='bar', login='foo'),
         repository='foo/bar',
         pr_number=123,
         contents='hi!',
@@ -220,7 +221,7 @@ def test_post_comment_update_error(gh, session):
     with pytest.raises(github.CannotPostComment):
         github.post_comment(
             github=gh,
-            me='foo',
+            user=github.User(name='foo', email='bar', login='foo'),
             repository='foo/bar',
             pr_number=123,
             contents='hi!',
@@ -240,7 +241,7 @@ def test_post_comment_server_error(gh, session):
     with pytest.raises(github.CannotPostComment):
         github.post_comment(
             github=gh,
-            me='foo',
+            user=github.User(name='foo', email='bar', login='foo'),
             repository='foo/bar',
             pr_number=123,
             contents='hi!',
@@ -393,3 +394,289 @@ def test_non_annotation_encoder():
 )
 def test_create_missing_coverage_annotations(annotation_type, annotations, expected_annotations):
     assert github.create_missing_coverage_annotations(annotation_type, annotations) == expected_annotations
+
+
+def test_write_annotations_to_branch_protected_branch(gh, session, base_config):
+    config = base_config(ANNOTATIONS_DATA_BRANCH='annotations', ANNOTATE_MISSING_LINES=True)
+    session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/branches/{config.ANNOTATIONS_DATA_BRANCH}')(
+        json={'protected': True}
+    )
+    with pytest.raises(github.CannotGetBranch):
+        github.write_annotations_to_branch(
+            github=gh,
+            user=github.User(name='foo', email='bar', login='foo'),
+            pr_number=123,
+            config=config,
+            annotations=[],
+        )
+
+
+def test_write_annotations_to_branch_forbidden(gh, session, base_config):
+    config = base_config(ANNOTATIONS_DATA_BRANCH='annotations', ANNOTATE_MISSING_LINES=True)
+    session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/branches/{config.ANNOTATIONS_DATA_BRANCH}')(
+        status_code=403
+    )
+    with pytest.raises(github.CannotGetBranch):
+        github.write_annotations_to_branch(
+            github=gh,
+            user=github.User(name='foo', email='bar', login='foo'),
+            pr_number=123,
+            config=config,
+            annotations=[],
+        )
+
+
+def test_write_annotations_to_branch_get_annotations_forbidden(gh, session, base_config):
+    config = base_config(ANNOTATIONS_DATA_BRANCH='annotations', ANNOTATE_MISSING_LINES=True)
+    session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/branches/{config.ANNOTATIONS_DATA_BRANCH}')(
+        json={'protected': False, 'name': 'annotations'}
+    )
+    session.register(
+        'GET', f'/repos/{config.GITHUB_REPOSITORY}/contents/123-annotations.json', params={'ref': 'annotations'}
+    )(status_code=403)
+    with pytest.raises(github.CannotGetBranch):
+        github.write_annotations_to_branch(
+            github=gh,
+            user=github.User(name='foo', email='bar', login='foo'),
+            pr_number=123,
+            config=config,
+            annotations=[],
+        )
+
+
+def test_write_annotations_to_branch_annotations_create(gh, session, base_config):
+    config = base_config(ANNOTATIONS_DATA_BRANCH='annotations', ANNOTATE_MISSING_LINES=True)
+    annotations = [
+        github.Annotation(
+            file=pathlib.Path('file.py'),
+            line_start=10,
+            line_end=10,
+            title='Error',
+            message_type='warning',
+            message='Error',
+        )
+    ]
+    session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/branches/{config.ANNOTATIONS_DATA_BRANCH}')(
+        json={'protected': False, 'name': config.ANNOTATIONS_DATA_BRANCH}
+    )
+    session.register(
+        'GET', f'/repos/{config.GITHUB_REPOSITORY}/contents/123-annotations.json', params={'ref': 'annotations'}
+    )(status_code=404)
+    session.register(
+        'PUT',
+        f'/repos/{config.GITHUB_REPOSITORY}/contents/123-annotations.json',
+        json={
+            'message': github.COMMIT_MESSAGE,
+            'branch': config.ANNOTATIONS_DATA_BRANCH,
+            'sha': None,
+            'committer': {'name': 'foo', 'email': 'bar'},
+            'content': base64.b64encode(json.dumps(annotations, cls=github.AnnotationEncoder).encode()).decode(),
+        },
+    )(json={'content': {'sha': 'abc'}})
+
+    github.write_annotations_to_branch(
+        github=gh,
+        user=github.User(name='foo', email='bar', login='foo'),
+        pr_number=123,
+        config=config,
+        annotations=annotations,
+    )
+
+
+def test_write_annotations_to_branch_annotations_update(gh, session, base_config):
+    config = base_config(ANNOTATIONS_DATA_BRANCH='annotations', ANNOTATE_MISSING_LINES=True)
+    annotations = [
+        github.Annotation(
+            file=pathlib.Path('file.py'),
+            line_start=10,
+            line_end=10,
+            title='Error',
+            message_type='warning',
+            message='Error',
+        )
+    ]
+    session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/branches/{config.ANNOTATIONS_DATA_BRANCH}')(
+        json={'protected': False, 'name': config.ANNOTATIONS_DATA_BRANCH}
+    )
+    session.register(
+        'GET', f'/repos/{config.GITHUB_REPOSITORY}/contents/123-annotations.json', params={'ref': 'annotations'}
+    )(json={'sha': 'abc'})
+    session.register(
+        'PUT',
+        f'/repos/{config.GITHUB_REPOSITORY}/contents/123-annotations.json',
+        json={
+            'message': github.COMMIT_MESSAGE,
+            'branch': config.ANNOTATIONS_DATA_BRANCH,
+            'sha': 'abc',
+            'committer': {'name': 'foo', 'email': 'bar'},
+            'content': base64.b64encode(json.dumps(annotations, cls=github.AnnotationEncoder).encode()).decode(),
+        },
+    )(json={'content': {'sha': 'abc'}})
+
+    github.write_annotations_to_branch(
+        github=gh,
+        user=github.User(name='foo', email='bar', login='foo'),
+        pr_number=123,
+        config=config,
+        annotations=annotations,
+    )
+
+
+def test_write_annotations_to_branch_annotations_update_not_found(gh, session, base_config):
+    config = base_config(ANNOTATIONS_DATA_BRANCH='annotations', ANNOTATE_MISSING_LINES=True)
+    annotations = [
+        github.Annotation(
+            file=pathlib.Path('file.py'),
+            line_start=10,
+            line_end=10,
+            title='Error',
+            message_type='warning',
+            message='Error',
+        )
+    ]
+    session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/branches/{config.ANNOTATIONS_DATA_BRANCH}')(
+        json={'protected': False, 'name': config.ANNOTATIONS_DATA_BRANCH}
+    )
+    session.register(
+        'GET', f'/repos/{config.GITHUB_REPOSITORY}/contents/123-annotations.json', params={'ref': 'annotations'}
+    )(json={'sha': 'abc'})
+    session.register(
+        'PUT',
+        f'/repos/{config.GITHUB_REPOSITORY}/contents/123-annotations.json',
+        json={
+            'message': github.COMMIT_MESSAGE,
+            'branch': config.ANNOTATIONS_DATA_BRANCH,
+            'sha': 'abc',
+            'committer': {'name': 'foo', 'email': 'bar'},
+            'content': base64.b64encode(json.dumps(annotations, cls=github.AnnotationEncoder).encode()).decode(),
+        },
+    )(status_code=404)
+
+    with pytest.raises(github.CannotGetBranch):
+        github.write_annotations_to_branch(
+            github=gh,
+            user=github.User(name='foo', email='bar', login='foo'),
+            pr_number=123,
+            config=config,
+            annotations=annotations,
+        )
+
+
+def test_write_annotations_to_branch_annotations_update_forbidden(gh, session, base_config):
+    config = base_config(ANNOTATIONS_DATA_BRANCH='annotations', ANNOTATE_MISSING_LINES=True)
+    annotations = [
+        github.Annotation(
+            file=pathlib.Path('file.py'),
+            line_start=10,
+            line_end=10,
+            title='Error',
+            message_type='warning',
+            message='Error',
+        )
+    ]
+    session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/branches/{config.ANNOTATIONS_DATA_BRANCH}')(
+        json={'protected': False, 'name': config.ANNOTATIONS_DATA_BRANCH}
+    )
+    session.register(
+        'GET', f'/repos/{config.GITHUB_REPOSITORY}/contents/123-annotations.json', params={'ref': 'annotations'}
+    )(json={'sha': 'abc'})
+    session.register(
+        'PUT',
+        f'/repos/{config.GITHUB_REPOSITORY}/contents/123-annotations.json',
+        json={
+            'message': github.COMMIT_MESSAGE,
+            'branch': config.ANNOTATIONS_DATA_BRANCH,
+            'sha': 'abc',
+            'committer': {'name': 'foo', 'email': 'bar'},
+            'content': base64.b64encode(json.dumps(annotations, cls=github.AnnotationEncoder).encode()).decode(),
+        },
+    )(status_code=403)
+
+    with pytest.raises(github.CannotGetBranch):
+        github.write_annotations_to_branch(
+            github=gh,
+            user=github.User(name='foo', email='bar', login='foo'),
+            pr_number=123,
+            config=config,
+            annotations=annotations,
+        )
+
+
+def test_write_annotations_to_branch_annotations_update_conflict(gh, session, base_config):
+    config = base_config(ANNOTATIONS_DATA_BRANCH='annotations', ANNOTATE_MISSING_LINES=True)
+    annotations = [
+        github.Annotation(
+            file=pathlib.Path('file.py'),
+            line_start=10,
+            line_end=10,
+            title='Error',
+            message_type='warning',
+            message='Error',
+        )
+    ]
+    session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/branches/{config.ANNOTATIONS_DATA_BRANCH}')(
+        json={'protected': False, 'name': config.ANNOTATIONS_DATA_BRANCH}
+    )
+    session.register(
+        'GET', f'/repos/{config.GITHUB_REPOSITORY}/contents/123-annotations.json', params={'ref': 'annotations'}
+    )(json={'sha': 'abc'})
+    session.register(
+        'PUT',
+        f'/repos/{config.GITHUB_REPOSITORY}/contents/123-annotations.json',
+        json={
+            'message': github.COMMIT_MESSAGE,
+            'branch': config.ANNOTATIONS_DATA_BRANCH,
+            'sha': 'abc',
+            'committer': {'name': 'foo', 'email': 'bar'},
+            'content': base64.b64encode(json.dumps(annotations, cls=github.AnnotationEncoder).encode()).decode(),
+        },
+    )(status_code=409)
+
+    with pytest.raises(github.CannotGetBranch):
+        github.write_annotations_to_branch(
+            github=gh,
+            user=github.User(name='foo', email='bar', login='foo'),
+            pr_number=123,
+            config=config,
+            annotations=annotations,
+        )
+
+
+def test_write_annotations_to_branch_annotations_update_validation_failed(gh, session, base_config):
+    config = base_config(ANNOTATIONS_DATA_BRANCH='annotations', ANNOTATE_MISSING_LINES=True)
+    annotations = [
+        github.Annotation(
+            file=pathlib.Path('file.py'),
+            line_start=10,
+            line_end=10,
+            title='Error',
+            message_type='warning',
+            message='Error',
+        )
+    ]
+    session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/branches/{config.ANNOTATIONS_DATA_BRANCH}')(
+        json={'protected': False, 'name': config.ANNOTATIONS_DATA_BRANCH}
+    )
+    session.register(
+        'GET', f'/repos/{config.GITHUB_REPOSITORY}/contents/123-annotations.json', params={'ref': 'annotations'}
+    )(json={'sha': 'abc'})
+    session.register(
+        'PUT',
+        f'/repos/{config.GITHUB_REPOSITORY}/contents/123-annotations.json',
+        json={
+            'message': github.COMMIT_MESSAGE,
+            'branch': config.ANNOTATIONS_DATA_BRANCH,
+            'sha': 'abc',
+            'committer': {'name': 'foo', 'email': 'bar'},
+            'content': base64.b64encode(json.dumps(annotations, cls=github.AnnotationEncoder).encode()).decode(),
+        },
+    )(status_code=422)
+
+    with pytest.raises(github.CannotGetBranch):
+        github.write_annotations_to_branch(
+            github=gh,
+            user=github.User(name='foo', email='bar', login='foo'),
+            pr_number=123,
+            config=config,
+            annotations=annotations,
+        )

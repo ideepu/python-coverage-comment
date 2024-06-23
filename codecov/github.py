@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import base64
 import dataclasses
 import json
 import pathlib
@@ -7,9 +8,10 @@ from collections.abc import Iterable
 from codecov import github_client, groups, log, settings
 
 GITHUB_CODECOV_LOGIN = 'CI-codecov[bot]'
+COMMIT_MESSAGE = 'Update annotations data'
 
 
-class CannotDeterminePR(Exception):
+class CannotGetBranch(Exception):
     pass
 
 
@@ -59,6 +61,13 @@ class AnnotationEncoder(json.JSONEncoder):
 
 
 @dataclasses.dataclass
+class User:
+    name: str
+    email: str
+    login: str
+
+
+@dataclasses.dataclass
 class RepositoryInfo:
     default_branch: str
     visibility: str
@@ -76,16 +85,21 @@ def get_repository_info(github: github_client.GitHub, repository: str) -> Reposi
     return RepositoryInfo(default_branch=response.default_branch, visibility=response.visibility)
 
 
-def get_my_login(github: github_client.GitHub) -> str:
+def get_my_login(github: github_client.GitHub) -> User:
     try:
         response = github.user.get()
+        user = User(
+            name=response.name,
+            email=response.email or f'{response.id}+{response.login}@users.noreply.github.com',
+            login=response.login,
+        )
     except github_client.Forbidden:
         # The GitHub actions user cannot access its own details
         # and I'm not sure there's a way to see that we're using
         # the GitHub actions user except noting that it fails
-        return GITHUB_CODECOV_LOGIN
+        return User(name=GITHUB_CODECOV_LOGIN, email='', login=GITHUB_CODECOV_LOGIN)
 
-    return response.login
+    return user
 
 
 def get_pr_number(github: github_client.GitHub, config: settings.Config) -> int:
@@ -138,7 +152,7 @@ def get_pr_diff(github: github_client.GitHub, repository: str, pr_number: int) -
 
 def post_comment(  # pylint: disable=too-many-arguments
     github: github_client.GitHub,
-    me: str,
+    user: User,
     repository: str,
     pr_number: int,
     contents: str,
@@ -151,7 +165,7 @@ def post_comment(  # pylint: disable=too-many-arguments
     comments_path = github.repos(repository).issues.comments
 
     for comment in issue_comments_path.get():
-        if comment.user.login == me and marker in comment.body:
+        if comment.user.login == user.login and marker in comment.body:
             log.info('Update previous comment')
             try:
                 comments_path(comment.id).patch(body=contents)
@@ -198,3 +212,55 @@ def create_missing_coverage_annotations(
             )
         )
     return formatted_annotations
+
+
+def write_annotations_to_branch(
+    github: github_client.GitHub, user: User, pr_number: int, config: settings.Config, annotations: list[Annotation]
+) -> None:
+    log.info('Getting the annotations data branch.')
+    try:
+        data_branch = github.repos(config.GITHUB_REPOSITORY).branches(config.ANNOTATIONS_DATA_BRANCH).get()
+        if data_branch.protected:
+            raise github_client.NotFound
+    except github_client.Forbidden as exc:
+        raise CannotGetBranch from exc
+    except github_client.NotFound as exc:
+        log.warning(f'Branch "{config.GITHUB_REPOSITORY}/{config.ANNOTATIONS_DATA_BRANCH}" does not exist.')
+        raise CannotGetBranch from exc
+
+    log.info('Writing annotations to branch.')
+    file_name = f'{pr_number}-annotations.json'
+    file_sha: str | None = None
+    try:
+        file = github.repos(config.GITHUB_REPOSITORY).contents(file_name).get(ref=config.ANNOTATIONS_DATA_BRANCH)
+        file_sha = file.sha
+    except github_client.NotFound:
+        pass
+    except github_client.Forbidden as exc:
+        log.error(f'Forbidden access to branch "{config.GITHUB_REPOSITORY}/{config.ANNOTATIONS_DATA_BRANCH}".')
+        raise CannotGetBranch from exc
+
+    try:
+        encoded_content = base64.b64encode(json.dumps(annotations, cls=AnnotationEncoder).encode()).decode()
+        github.repos(config.GITHUB_REPOSITORY).contents(file_name).put(
+            message=COMMIT_MESSAGE,
+            branch=config.ANNOTATIONS_DATA_BRANCH,
+            sha=file_sha,
+            committer={
+                'name': user.name,
+                'email': user.email,
+            },
+            content=encoded_content,
+        )
+    except github_client.NotFound as exc:
+        log.error(f'Branch "{config.GITHUB_REPOSITORY}/{config.ANNOTATIONS_DATA_BRANCH}" does not exist.')
+        raise CannotGetBranch from exc
+    except github_client.Forbidden as exc:
+        log.error(f'Forbidden access to branch "{config.GITHUB_REPOSITORY}/{config.ANNOTATIONS_DATA_BRANCH}".')
+        raise CannotGetBranch from exc
+    except github_client.Conflict as exc:
+        log.error(f'Conflict writing to branch "{config.GITHUB_REPOSITORY}/{config.ANNOTATIONS_DATA_BRANCH}".')
+        raise CannotGetBranch from exc
+    except github_client.ValidationFailed as exc:
+        log.error('Validation failed on committer name or email.')
+        raise CannotGetBranch from exc
