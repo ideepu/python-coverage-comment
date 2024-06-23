@@ -25,8 +25,7 @@ def test_process_pr_skip_coverage(
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
     session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
-    repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
-    result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
+    result = main.process_pr(config, gh, config.GITHUB_PR_NUMBER)
 
     assert result == 0
     assert caplog.records[-1].message == 'Skipping coverage report generation'
@@ -51,8 +50,7 @@ def test_process_pr_skip_coverage_with_annotations(
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
     session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
-    repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
-    result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
+    result = main.process_pr(config, gh, config.GITHUB_PR_NUMBER)
 
     assert result == 0
 
@@ -96,8 +94,7 @@ def test_process_branch_coverage_in_annotations(
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
     session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
-    repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
-    result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
+    result = main.process_pr(config, gh, config.GITHUB_PR_NUMBER)
 
     assert result == 0
 
@@ -119,8 +116,7 @@ def test_process_pr_with_annotations_missing_marker_error(
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
     session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
-    repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
-    result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
+    result = main.process_pr(config, gh, config.GITHUB_PR_NUMBER)
 
     assert result == 1
 
@@ -150,8 +146,7 @@ def test_process_pr_with_annotations_template_error(
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
     session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
-    repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
-    result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
+    result = main.process_pr(config, gh, config.GITHUB_PR_NUMBER)
 
     assert result == 1
 
@@ -183,8 +178,7 @@ def test_process_pr_with_annotations_cannot_post(
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
     session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
-    repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
-    result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
+    result = main.process_pr(config, gh, config.GITHUB_PR_NUMBER)
 
     assert result == 1
     mock_post_comment.assert_called_once()
@@ -230,8 +224,7 @@ def test_process_pr_with_annotations(
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
     session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
-    repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
-    result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
+    result = main.process_pr(config, gh, config.GITHUB_PR_NUMBER)
 
     assert result == 0
     assert caplog.records[-1].message == 'Comment created on PR'
@@ -279,8 +272,7 @@ def test_process_pr_with_annotations_to_branch(
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls/{config.GITHUB_PR_NUMBER}')(text=diff_data)
     session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
 
-    repo_info = github.RepositoryInfo(default_branch='main', visibility='public')
-    result = main.process_pr(config, gh, repo_info, config.GITHUB_PR_NUMBER)
+    result = main.process_pr(config, gh, config.GITHUB_PR_NUMBER)
 
     assert result == 0
     assert caplog.records[-1].message == 'Comment created on PR'
@@ -298,7 +290,6 @@ def test_process_pr_generate_annotations(mock_open: mock.Mock, gh, base_config, 
 
     result = main.process_pr(
         config=config,
-        repo_info=github.RepositoryInfo(default_branch='main', visibility='public'),
         pr_number=123,
         gh=gh,
     )

@@ -50,12 +50,9 @@ def action(config: settings.Config, github_session: httpx.Client) -> int:
         return 1
 
     log.debug(f'Operating on Pull Request {pr_number}')
-    repo_info = github.get_repository_info(github=gh, repository=config.GITHUB_REPOSITORY)
-
     return process_pr(
         config=config,
         gh=gh,
-        repo_info=repo_info,
         pr_number=pr_number,
     )
 
@@ -63,13 +60,11 @@ def action(config: settings.Config, github_session: httpx.Client) -> int:
 def process_pr(  # pylint: disable=too-many-locals
     config: settings.Config,
     gh: github_client.GitHub,
-    repo_info: github.RepositoryInfo,
     pr_number: int,
 ) -> int:
     coverage = coverage_module.get_coverage_info(coverage_path=config.COVERAGE_PATH)
     if config.BRANCH_COVERAGE:
         coverage = diff_grouper.group_branches(coverage=coverage)
-    base_ref = config.GITHUB_BASE_REF or repo_info.default_branch
     pr_diff = github.get_pr_diff(github=gh, repository=config.GITHUB_REPOSITORY, pr_number=pr_number)
     added_lines = coverage_module.parse_diff_output(diff=pr_diff)
     diff_coverage = coverage_module.get_diff_coverage_info(added_lines=added_lines, coverage=coverage)
@@ -116,7 +111,7 @@ def process_pr(  # pylint: disable=too-many-locals
             minimum_orange=config.MINIMUM_ORANGE,
             repo_name=config.GITHUB_REPOSITORY,
             pr_number=pr_number,
-            base_ref=base_ref,
+            base_ref=config.GITHUB_BASE_REF,
             base_template=template.read_template_file('comment.md.j2'),
             marker=marker,
             subproject_id=config.SUBPROJECT_ID,
