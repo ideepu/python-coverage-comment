@@ -26,10 +26,13 @@ report:
 	pipenv run pytest tests  --cov-branch --cov=codecov --cov-report=term-missing --cov-report=json:/tmp/report.json
 
 build:
-	python3 -m build
+	pipenv run python3 -m build
+
+test-publish:
+	pipenv run python3 -m twine upload --repository testpypi dist/*
 
 publish:
-	python3 -m twine upload dist/*
+	pipenv run python3 -m twine upload dist/*
 
 run:
 	pipenv run python run.py
