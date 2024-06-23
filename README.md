@@ -90,6 +90,7 @@ Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required.
 - `MINIMUM_ORANGE`: The minimum coverage percentage for orange status. Default is 70.
 - `BRANCH_COVERAGE`: Show branch coverage in the report. Default is False.
 - `SKIP_COVERAGE`: Skip coverage reporting as github comment and generate only annotaions. Default is False.
+- `ANNOTATIONS_DATA_BRANCH`: The branch to store the annotations. Read more about this [here](./docs/annotations.md).
 - `ANNOTATIONS_OUTPUT_PATH`: The path where the annotaions should be stored. Should be a .json file.
 - `ANNOTATE_MISSING_LINES`: Whether to annotate missing lines in the coverage report. Default is False.
 - `ANNOTATION_TYPE`: The type of annotation to use for missing lines. Default is 'warning'.
