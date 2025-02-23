@@ -51,13 +51,19 @@ To get started, follow these steps:
     cd <repository_directory>
     ```
 
-3. Build the project:
+3. create `.env`:
+
+    ```bash
+    `echo "PIPENV_VENV_IN_PROJECT=1" >> .env`
+    ```
+
+4. Build the project:
 
     ```bash
     make all
     ```
 
-4. **Export the required environment variables**:
+5. **Export the required environment variables**:
 
     ```bash
     export GITHUB_REPOSITORY=<repository_name>
@@ -66,7 +72,7 @@ To get started, follow these steps:
     export GITHUB_PR_NUMBER=<pull_request_number>
     ```
 
-5. **Run the action**:
+6. **Run the action**:
 
     ```bash
     make run
