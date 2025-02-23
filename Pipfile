@@ -4,14 +4,13 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+python-coverage-comment = {file = ".", editable = true}
 httpx = "*"
 jinja2 = "*"
-python-coverage-comment = {file = ".", editable = true}
 
 [dev-packages]
 ruff = "*"
 mypy = "*"
-pre-commit = "*"
 pytest = "*"
 pytest-env = "*"
 pytest-cov = "*"
@@ -19,6 +18,7 @@ ipython = "*"
 setuptools = "*"
 build = "*"
 twine = "*"
+pre-commit = "*"
 
 [requires]
 python_version = "3.11"
