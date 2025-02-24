@@ -39,9 +39,12 @@ def test_get_pr_forbidden(gh, session, base_config):
 
 
 def test_get_pr_for_branch(gh, session, base_config):
-    config = base_config(GITHUB_PR_NUMBER=None, GITHUB_REF='featuer/branch')
+    config = base_config(GITHUB_PR_NUMBER=None, GITHUB_REF='feature/branch')
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls')(
-        json=[{'number': config.GITHUB_PR_NUMBER, 'state': 'open'}]
+        json=[
+            {'head': {'ref': 'feature/not-the-right-branch'}, 'number': 124, 'state': 'open'},
+            {'head': {'ref': 'feature/branch'}, 'number': config.GITHUB_PR_NUMBER, 'state': 'open'},
+        ]
     )
 
     result = github.get_pr_number(github=gh, config=config)
@@ -49,7 +52,7 @@ def test_get_pr_for_branch(gh, session, base_config):
 
 
 def test_get_pr_for_branch_no_open_pr(gh, session, base_config):
-    config = base_config(GITHUB_PR_NUMBER=None, GITHUB_REF='featuer/branch')
+    config = base_config(GITHUB_PR_NUMBER=None, GITHUB_REF='feature/branch')
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls')(json=[])
 
     with pytest.raises(github.CannotGetPullRequest):
@@ -57,7 +60,7 @@ def test_get_pr_for_branch_no_open_pr(gh, session, base_config):
 
 
 def test_get_pr_for_branch_forbidden(gh, session, base_config):
-    config = base_config(GITHUB_PR_NUMBER=None, GITHUB_REF='featuer/branch')
+    config = base_config(GITHUB_PR_NUMBER=None, GITHUB_REF='feature/branch')
     session.register('GET', f'/repos/{config.GITHUB_REPOSITORY}/pulls')(status_code=403)
 
     with pytest.raises(github.CannotGetPullRequest):

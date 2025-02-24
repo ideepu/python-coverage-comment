@@ -17,8 +17,8 @@ pytest-cov = "*"
 ipython = "*"
 setuptools = "*"
 build = "*"
-twine = "*"
 pre-commit = "*"
+twine = "*"
 
 [requires]
 python_version = "3.11"
