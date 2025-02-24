@@ -100,11 +100,14 @@ def get_pr_number(github: github_client.GitHub, config: settings.Config) -> int:
     # If we're not on a PR, we need to find the PR number from the branch name
     if config.GITHUB_REF:
         try:
-            pull_requests = github.repos(config.GITHUB_REPOSITORY).pulls.get(state='open', head=config.GITHUB_REF)
-            if len(pull_requests) != 1:
-                raise github_client.NotFound
-
-            return pull_requests[0].number
+            pull_requests = github.repos(config.GITHUB_REPOSITORY).pulls.get(state='open', sort='updated', per_page=100)
+            for pull_request in pull_requests:
+                if pull_request.head.ref == config.GITHUB_REF:
+                    return pull_request.number
+            log.error(
+                f'Checked the recent updated 100 PRs, No open pull request found for branch {config.GITHUB_REF}.',
+            )
+            raise github_client.NotFound
         except github_client.Forbidden as exc:
             raise CannotGetPullRequest from exc
         except github_client.NotFound as exc:
