@@ -45,7 +45,7 @@ class Github:
         # TODO: Validate the user and email if annotations are not empty. We need these for committing to the branch
 
     def _init_user(self) -> User:
-        log.debug('Getting user details.')
+        log.info('Getting user details.')
         try:
             response = self.client.user.get()
             return User(
@@ -82,11 +82,7 @@ class Github:
         if ref:
             log.info('Getting pull request for branch %s.', ref)
             try:
-                pull_requests = self.client.repos(self.repository).pulls.get(
-                    state='open',
-                    sort='updated',
-                    per_page=100,
-                )
+                pull_requests = self.client.repos(self.repository).pulls.get(state='open', per_page=100)
                 for pull_request in pull_requests:
                     if pull_request.head.ref == ref:
                         return pull_request.number

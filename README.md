@@ -10,13 +10,13 @@ pipenv run pytest tests  --cov-branch --cov=codecov --cov-report=json:/tmp/repor
 
 Permissions needed for the Github Token:
 
-`Contents:read`
 `Pull requests:read`
 `Pull requests:write`
 
 If you have given `ANNOTATIONS_DATA_BRANCH` branch then Github Token also requires content write permissions.
 Read more on how to use this [here](./docs/annotations.md).
 
+`Contents:read`
 `Contents:write`
 
 **install:**

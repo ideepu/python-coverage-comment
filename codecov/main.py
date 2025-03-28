@@ -51,6 +51,7 @@ class Main:
         self._generate_annotations()
 
     def _process_coverage(self):
+        log.info('Processing coverage data')
         coverage = self.coverage_module.get_coverage_info(coverage_path=self.config.COVERAGE_PATH)
         if self.config.BRANCH_COVERAGE:
             coverage = diff_grouper.fill_branch_missing_groups(coverage=coverage)
@@ -115,7 +116,7 @@ class Main:
             raise CoreProcessingException from e
 
         self.github.post_comment(contents=comment, marker=marker)
-        log.debug('Comment created on PR.')
+        log.info('Comment created on PR.')
 
     def _generate_annotations(self):
         if not self.config.ANNOTATE_MISSING_LINES:
@@ -155,6 +156,7 @@ class Main:
         print(reset, end='')
 
         # Save to file
+        # TODO: Take the folder path instead of the file path
         if self.config.ANNOTATIONS_OUTPUT_PATH:
             log.info('Writing annotations to file.')
             with self.config.ANNOTATIONS_OUTPUT_PATH.open('w+') as annotations_file:

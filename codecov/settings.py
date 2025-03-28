@@ -10,6 +10,8 @@ from typing import Any
 
 from codecov.exceptions import InvalidAnnotationType, MissingEnvironmentVariable
 
+# TODO: Rename this file to config.py
+
 
 def path_below(path_str: str | pathlib.Path) -> pathlib.Path:
     path = pathlib.Path(path_str).resolve()
@@ -44,6 +46,7 @@ class Config:
     BRANCH_COVERAGE: bool = False
     SKIP_COVERAGE: bool = False
     ANNOTATE_MISSING_LINES: bool = False
+    # TODO: Make it enum
     ANNOTATION_TYPE: str = 'warning'
     ANNOTATIONS_OUTPUT_PATH: pathlib.Path | None = None
     ANNOTATIONS_DATA_BRANCH: str | None = None
