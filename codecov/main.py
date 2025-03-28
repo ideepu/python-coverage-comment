@@ -125,7 +125,7 @@ class Main:
         log.info('Generating annotations for missing lines.')
         annotations = diff_grouper.get_diff_missing_groups(coverage=self.coverage, diff_coverage=self.diff_coverage)
         formatted_annotations = groups.create_missing_coverage_annotations(
-            annotation_type=self.config.ANNOTATION_TYPE,
+            annotation_type=self.config.ANNOTATION_TYPE.value,
             annotations=annotations,
         )
 
@@ -136,7 +136,7 @@ class Main:
             )
             formatted_annotations.extend(
                 groups.create_missing_coverage_annotations(
-                    annotation_type=self.config.ANNOTATION_TYPE,
+                    annotation_type=self.config.ANNOTATION_TYPE.value,
                     annotations=branch_annotations,
                     branch=True,
                 )

@@ -92,7 +92,7 @@ Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` 
 - `ANNOTATIONS_DATA_BRANCH`: The branch to store the annotations. Read more about this [here](./docs/annotations.md).
 - `ANNOTATIONS_OUTPUT_PATH`: The path where the annotaions should be stored. Should be a .json file.
 - `ANNOTATE_MISSING_LINES`: Whether to annotate missing lines in the coverage report. Default is False.
-- `ANNOTATION_TYPE`: The type of annotation to use for missing lines. Default is 'warning'.
+- `ANNOTATION_TYPE`: The type of annotation to use for missing lines. 'notice' or 'warning' or 'error'. Default is 'warning'.
 - `MAX_FILES_IN_COMMENT`: The maximum number of files to include in the coverage report comment. Default is 25.
 - `COMPLETE_PROJECT_REPORT`: Whether to include the complete project coverage report in the comment. Default is False.
 - `COVERAGE_REPORT_URL`: URL of the full coverage report to mention in the comment.

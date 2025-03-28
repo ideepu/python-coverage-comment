@@ -8,7 +8,7 @@ from collections.abc import MutableMapping
 from enum import Enum
 from typing import Any, Callable
 
-from codecov.exceptions import InvalidAnnotationType, MissingEnvironmentVariable
+from codecov.exceptions import MissingEnvironmentVariable
 
 
 def path_below(path_str: str | pathlib.Path) -> pathlib.Path:
@@ -32,7 +32,7 @@ class AnnotationType(Enum):
 
 
 # pylint: disable=invalid-name, too-many-instance-attributes
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class Config:
     """This object defines the environment variables"""
 
@@ -92,12 +92,8 @@ class Config:
         return str_to_bool(value)
 
     @classmethod
-    def clean_annotation_type(cls, value: str) -> str:
-        if value not in {'notice', 'warning', 'error'}:
-            raise InvalidAnnotationType(
-                f'The annotation type {value} is not valid. Please choose from notice, warning or error'
-            )
-        return value
+    def clean_annotation_type(cls, value: str) -> AnnotationType:
+        return AnnotationType(value)
 
     @classmethod
     def clean_github_pr_number(cls, value: str) -> int:

@@ -8,7 +8,7 @@ import tempfile
 import pytest
 
 from codecov import config
-from codecov.exceptions import InvalidAnnotationType, MissingEnvironmentVariable
+from codecov.exceptions import MissingEnvironmentVariable
 
 
 def test_path_below_existing_file():
@@ -41,7 +41,7 @@ def test_config_from_environ_missing():
         config.Config.from_environ({})
 
 
-def test_config__from_environ__sample():
+def test_config_from_environ_sample():
     token = secrets.token_urlsafe()
     with tempfile.NamedTemporaryFile(suffix='.json') as temp_file:
         assert config.Config.from_environ(
@@ -56,7 +56,7 @@ def test_config__from_environ__sample():
                 'MINIMUM_ORANGE': '70',
                 'SKIP_COVERAGE': 'False',
                 'ANNOTATE_MISSING_LINES': 'True',
-                'ANNOTATION_TYPE': 'warning',
+                'ANNOTATION_TYPE': 'notice',
                 'ANNOTATIONS_OUTPUT_PATH': '/path/to/annotations',
                 'MAX_FILES_IN_COMMENT': 25,
                 'COMPLETE_PROJECT_REPORT': 'True',
@@ -74,7 +74,7 @@ def test_config__from_environ__sample():
             MINIMUM_ORANGE=decimal.Decimal('70'),
             SKIP_COVERAGE=False,
             ANNOTATE_MISSING_LINES=True,
-            ANNOTATION_TYPE='warning',
+            ANNOTATION_TYPE=config.AnnotationType.NOTICE,
             ANNOTATIONS_OUTPUT_PATH=pathlib.Path('/path/to/annotations'),
             MAX_FILES_IN_COMMENT=25,
             COMPLETE_PROJECT_REPORT=True,
@@ -96,7 +96,7 @@ def test_config_required_pr_or_ref():
 
 
 def test_config_invalid_annotation_type():
-    with pytest.raises(InvalidAnnotationType):
+    with pytest.raises(ValueError):
         config.Config.from_environ({'ANNOTATION_TYPE': 'foo'})
 
 
@@ -155,11 +155,11 @@ def test_config_clean_debug():
 
 def test_config_clean_annotation_type():
     value = config.Config.clean_annotation_type('warning')
-    assert value == 'warning'
+    assert value == config.AnnotationType.WARNING
 
 
 def test_config_clean_annotation_type_invalid():
-    with pytest.raises(InvalidAnnotationType):
+    with pytest.raises(ValueError):
         config.Config.clean_annotation_type('foo')
 
 
