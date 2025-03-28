@@ -5,7 +5,9 @@ import pathlib
 
 import pytest
 
-from codecov import coverage, template
+from codecov import template
+from codecov.coverage import DiffCoverage
+from codecov.exceptions import MissingMarker, TemplateException
 
 
 @pytest.mark.parametrize(
@@ -69,7 +71,7 @@ def test_get_marker(marker_id, result):
 
 
 def test_template_no_marker(coverage_obj, diff_coverage_obj):
-    with pytest.raises(template.MissingMarker):
+    with pytest.raises(MissingMarker):
         marker = '<!-- foobar -->'
         template.get_comment_markdown(
             coverage=coverage_obj,
@@ -90,7 +92,7 @@ def test_template_no_marker(coverage_obj, diff_coverage_obj):
 
 
 def test_template_error(coverage_obj, diff_coverage_obj):
-    with pytest.raises(template.TemplateError):
+    with pytest.raises(TemplateException):
         template.get_comment_markdown(
             coverage=coverage_obj,
             diff_coverage=diff_coverage_obj,
@@ -141,7 +143,12 @@ def test_get_comment_markdown(coverage_obj, diff_coverage_obj):
         .split(maxsplit=3)
     )
 
-    expected = ['60%', '50%', 'foo', '<!-- foo -->']
+    expected = [
+        coverage_obj.info.percent_covered_display,
+        template.pct(diff_coverage_obj.total_percent_covered),
+        'foo',
+        '<!-- foo -->',
+    ]
 
     assert result == expected
 
@@ -203,7 +210,7 @@ def test_comment_template_branch_coverage(coverage_obj, diff_coverage_obj):
 
 
 def test_template_no_files(coverage_obj):
-    diff_coverage = coverage.DiffCoverage(
+    diff_coverage = DiffCoverage(
         total_num_lines=0,
         total_num_violations=0,
         total_percent_covered=decimal.Decimal('1'),
@@ -238,7 +245,7 @@ def test_template_no_files(coverage_obj):
         pytest.param(
             """
             # file: a.py
-            1 covered
+            1 line covered
             """,
             2,
             [],
@@ -250,7 +257,7 @@ def test_template_no_files(coverage_obj):
             """
             # file: a.py
             1
-            2 covered
+            2 line covered
             """,
             2,
             [],
@@ -261,7 +268,7 @@ def test_template_no_files(coverage_obj):
         pytest.param(
             """
             # file: a.py
-            1 missing
+            1 line missing
             """,
             2,
             [],
@@ -272,7 +279,7 @@ def test_template_no_files(coverage_obj):
         pytest.param(
             """
             # file: a.py
-            + 1 covered
+            + 1 line covered
             """,
             2,
             ['a.py'],
@@ -283,9 +290,9 @@ def test_template_no_files(coverage_obj):
         pytest.param(
             """
             # file: b.py
-            + 1 covered
+            + 1 line covered
             # file: a.py
-            + 1 covered
+            + 1 line covered
             """,
             2,
             ['a.py', 'b.py'],
@@ -296,10 +303,10 @@ def test_template_no_files(coverage_obj):
         pytest.param(
             """
             # file: a.py
-            + 1 covered
-            + 2 covered
+            + 1 line covered
+            + 2 line covered
             # file: b.py
-            + 1 missing
+            + 1 line missing
             """,
             1,
             ['b.py'],
@@ -310,11 +317,11 @@ def test_template_no_files(coverage_obj):
         pytest.param(
             """
             # file: a.py
-            + 1 covered
+            + 1 line covered
             # file: c.py
-            + 1 missing
+            + 1 line missing
             # file: b.py
-            + 1 missing
+            + 1 line missing
             """,
             2,
             ['b.py', 'c.py'],
@@ -326,12 +333,12 @@ def test_template_no_files(coverage_obj):
             """
             # file: a.py
             1
-            2 covered
+            2 line covered
             # file: c.py
-            + 1 covered
+            + 1 line covered
             # file: b.py
-            + 1 covered
-            + 1 covered
+            + 1 line covered
+            + 1 line covered
             """,
             2,
             ['b.py', 'c.py'],
@@ -342,10 +349,10 @@ def test_template_no_files(coverage_obj):
         pytest.param(
             """
             # file: a.py
-            + 1 covered
-            + 2 covered
+            + 1 line covered
+            + 2 line covered
             # file: b.py
-            + 1 missing
+            + 1 line missing
             """,
             None,
             ['a.py', 'b.py'],
@@ -380,7 +387,7 @@ def test_select_changed_files(
         pytest.param(
             """
             # file: a.py
-            1 covered
+            1 line covered
             """,
             2,
             ['a.py'],
@@ -391,7 +398,7 @@ def test_select_changed_files(
             """
             # file: a.py
             1
-            2 covered
+            2 line covered
             """,
             2,
             ['a.py'],
@@ -401,7 +408,7 @@ def test_select_changed_files(
         pytest.param(
             """
             # file: a.py
-            1 missing
+            1 line missing
             """,
             2,
             ['a.py'],
@@ -411,7 +418,7 @@ def test_select_changed_files(
         pytest.param(
             """
             # file: a.py
-            + 1 covered
+            + 1 line covered
             """,
             2,
             [],
@@ -421,9 +428,9 @@ def test_select_changed_files(
         pytest.param(
             """
             # file: b.py
-            + 1 covered
+            + 1 line covered
             # file: a.py
-            + 1 covered
+            + 1 line covered
             """,
             2,
             [],
@@ -433,11 +440,11 @@ def test_select_changed_files(
         pytest.param(
             """
             # file: a.py
-            + 1 covered
+            + 1 line covered
             # file: c.py
-            1 missing
+            1 line missing
             # file: b.py
-            1 missing
+            1 line missing
             """,
             2,
             ['b.py', 'c.py'],
@@ -448,12 +455,12 @@ def test_select_changed_files(
             """
             # file: a.py
             1
-            2 covered
+            2 line covered
             # file: c.py
-            + 1 covered
+            + 1 line covered
             # file: b.py
-            1 covered
-            1 covered
+            1 line covered
+            1 line covered
             """,
             2,
             ['a.py', 'b.py'],
@@ -463,10 +470,10 @@ def test_select_changed_files(
         pytest.param(
             """
             # file: a.py
-            1 covered
-            2 covered
+            1 line covered
+            2 line covered
             # file: b.py
-            1 missing
+            1 line missing
             """,
             None,
             ['a.py', 'b.py'],
@@ -496,7 +503,7 @@ def test_select_files(
 def test_select_files_no_statements(make_coverage_and_diff):
     code = """
         # file: a.py
-        1 covered
+        1 line covered
         """
     cov, diff_cov = make_coverage_and_diff(code)
     _, _, changed_files_info = template.select_changed_files(coverage=cov, diff_coverage=diff_cov, max_files=2)
@@ -517,10 +524,10 @@ def test_select_files_no_statements(make_coverage_and_diff):
             """
             # file: a.py
             + 1
-            2 covered
-            + 3 missing
-            + 4 missing
-            + 5 covered
+            2 line covered
+            + 3 line missing
+            + 4 line missing
+            + 5 line covered
             """,
             2,
             3,
@@ -530,7 +537,7 @@ def test_select_files_no_statements(make_coverage_and_diff):
         pytest.param(
             """
             # file: a.py
-            + 1 missing
+            + 1 line missing
             """,
             1,
             1,
@@ -563,7 +570,7 @@ def test_sort_order_none(make_coverage):
     cov = make_coverage(
         """
         # file: a.py
-        1 covered
+        1 line covered
         """
     )
     file_info = template.FileInfo(
