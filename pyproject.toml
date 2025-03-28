@@ -79,6 +79,20 @@ combine_as_imports = true
 line_length = 120
 profile = "black"
 
+[tool.markdownlint]
+default = true
+
+[MD007]
+indent = 4
+
+[MD013]
+# Number of characters
+line_length = 120
+# Number of characters for headings
+heading_line_length = 80
+# Number of characters for code blocks
+code_block_line_length = 120
+
 [tool.flake8]
 ignore = ['E501', 'W503', 'W504']
 
