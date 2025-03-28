@@ -5,11 +5,10 @@ import decimal
 import inspect
 import pathlib
 from collections.abc import MutableMapping
+from enum import Enum
 from typing import Any, Callable
 
 from codecov.exceptions import InvalidAnnotationType, MissingEnvironmentVariable
-
-# TODO: Rename this file to config.py
 
 
 def path_below(path_str: str | pathlib.Path) -> pathlib.Path:
@@ -24,6 +23,12 @@ def path_below(path_str: str | pathlib.Path) -> pathlib.Path:
 
 def str_to_bool(value: str) -> bool:
     return value.lower() in ('1', 'true', 'yes')
+
+
+class AnnotationType(Enum):
+    NOTICE = 'notice'
+    WARNING = 'warning'
+    ERROR = 'error'
 
 
 # pylint: disable=invalid-name, too-many-instance-attributes
@@ -44,8 +49,7 @@ class Config:
     BRANCH_COVERAGE: bool = False
     SKIP_COVERAGE: bool = False
     ANNOTATE_MISSING_LINES: bool = False
-    # TODO: Make it enum
-    ANNOTATION_TYPE: str = 'warning'
+    ANNOTATION_TYPE: AnnotationType = AnnotationType.WARNING
     ANNOTATIONS_OUTPUT_PATH: pathlib.Path | None = None
     ANNOTATIONS_DATA_BRANCH: str | None = None
     MAX_FILES_IN_COMMENT: int = 25

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import httpx
 
 from codecov.exceptions import ApiError, ConfigurationException, Conflict, Forbidden, NotFound, ValidationFailed
@@ -80,7 +82,7 @@ class GitHubClient:
 
     def _http(self, method: str, path: str, *, use_bytes: bool = False, use_text: bool = False, **kw):
         _method = method.lower()
-        requests_kwargs = {}
+        requests_kwargs: dict[Any, Any] = {}
         headers = kw.pop('headers', {})
         if _method == 'get' and kw:
             requests_kwargs = {'params': kw}
@@ -106,14 +108,16 @@ class GitHubClient:
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
-            # TODO: Use `match` Statement
-            cls: type[ApiError] = {
-                403: Forbidden,
-                404: NotFound,
-                409: Conflict,
-                422: ValidationFailed,
-            }.get(exc.response.status_code, ApiError)
-
-            raise cls(str(contents)) from exc
+            exc_cls = ApiError
+            match exc.response.status_code:
+                case 403:
+                    exc_cls = Forbidden
+                case 404:
+                    exc_cls = NotFound
+                case 409:
+                    exc_cls = Conflict
+                case 422:
+                    exc_cls = ValidationFailed
+            raise exc_cls(str(contents)) from exc
 
         return contents
