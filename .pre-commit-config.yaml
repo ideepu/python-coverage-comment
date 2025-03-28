@@ -45,25 +45,11 @@ repos:
     - id: ruff
     - id: ruff-format
       args: ['--check']
--   repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 23.11.0
-    hooks:
-    -   id: black
-        args: ['--check']
--   repo: https://github.com/hhatto/autopep8
-    rev: v2.0.4
-    hooks:
-    -   id: autopep8
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.7.0
     hooks:
     -   id: mypy
         additional_dependencies: ['types-pytz', 'types-requests']
--   repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
-    hooks:
-    -   id: flake8
-        additional_dependencies: ['Flake8-pyproject==1.2.3']
 -   repo: https://github.com/PyCQA/bandit
     rev: 1.7.5
     hooks:
@@ -73,11 +59,6 @@ repos:
     rev: v3.0.2
     hooks:
     -   id: pylint
--   repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
-    hooks:
-    -   id: isort
-        args: ['--check-only']
 -   repo: https://github.com/hadialqattan/pycln
     rev: v2.5.0
     hooks:

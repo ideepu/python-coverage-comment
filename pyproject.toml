@@ -1,4 +1,13 @@
 [project]
+name = "python-coverage-comment"
+version = "2.1"
+description = "Create a Coverage report comment on Github PR"
+readme = "README.md"
+license = {file = "LICENSE"}
+maintainers = [
+  {name = "Pradeep Tammali", email = "pradeeptammaliwork@gmail.com"},
+]
+requires-python = ">=3.0"
 classifiers = [
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.0",
@@ -18,34 +27,17 @@ dependencies = [
   "httpx",
   "jinja2",
 ]
-description = "Create a Coverage report comment on Github PR"
-license = {file = "LICENSE"}
-maintainers = [
-  {name = "Pradeep Tammali", email = "pradeeptammaliwork@gmail.com"},
-]
-name = "python-coverage-comment"
-readme = "README.md"
-requires-python = ">=3.0"
-version = "2.1"
-
 [project.urls]
 Homepage = "https://github.com/PradeepTammali/python-coverage-comment"
 Issues = "https://github.com/PradeepTammali/python-coverage-comment/issues"
+[project.scripts]
+codecov = "codecov.main:main"
+
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = [
   "setuptools",
 ]
-
-[project.scripts]
-codecov = "codecov.main:main"
-[tool.autopep8]
-in-place = false
-max_line_length = 120
-
-[tool.black]
-line-length = 120
-skip-string-normalization = true
 
 [tool.ruff]
 line-length = 120
@@ -76,11 +68,6 @@ quote-style = 'single'
 # Ignore assert usage in tests
 'tests/*.py' = ['S101']
 
-[tool.isort]
-combine_as_imports = true
-line_length = 120
-profile = "black"
-
 [tool.markdownlint]
 default = true
 
@@ -94,9 +81,6 @@ line_length = 120
 heading_line_length = 80
 # Number of characters for code blocks
 code_block_line_length = 120
-
-[tool.flake8]
-ignore = ['E501', 'W503', 'W504']
 
 [tool.pytest.ini_options]
 env = ['APP_ENVIRONMENT = unittest']
