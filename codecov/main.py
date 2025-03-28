@@ -2,13 +2,13 @@ import json
 import os
 
 from codecov import diff_grouper, groups, template
+from codecov.config import Config
 from codecov.coverage import PytestCoverage
 from codecov.coverage.base import Coverage, DiffCoverage
 from codecov.exceptions import CoreProcessingException, MissingMarker, TemplateException
 from codecov.github import Github
 from codecov.github_client import GitHubClient
 from codecov.log import log, setup as log_setup
-from codecov.settings import Config
 
 
 class Main:

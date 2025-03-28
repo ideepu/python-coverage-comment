@@ -7,43 +7,44 @@ import tempfile
 
 import pytest
 
-from codecov import settings
+from codecov import config
+from codecov.exceptions import InvalidAnnotationType, MissingEnvironmentVariable
 
 
 def test_path_below_existing_file():
     with tempfile.NamedTemporaryFile(suffix='.json') as temp_file:
         path = pathlib.Path(temp_file.name)
-        assert settings.path_below(path) == path.resolve()
+        assert config.path_below(path) == path.resolve()
 
 
 def test_path_below_nonexistent_file():
     path = pathlib.Path('/path/to/nonexistent_file.json')
     with pytest.raises(ValueError):
-        settings.path_below(path)
+        config.path_below(path)
 
 
 def test_path_below_directory():
     path = pathlib.Path('/path/to/directory')
     with pytest.raises(ValueError):
-        settings.path_below(path)
+        config.path_below(path)
 
 
 def test_path_below_non_json_file():
     with tempfile.NamedTemporaryFile(suffix='.txt') as temp_file:
         path = pathlib.Path(temp_file.name)
         with pytest.raises(ValueError):
-            settings.path_below(path)
+            config.path_below(path)
 
 
 def test_config_from_environ_missing():
-    with pytest.raises(settings.MissingEnvironmentVariable):
-        settings.Config.from_environ({})
+    with pytest.raises(MissingEnvironmentVariable):
+        config.Config.from_environ({})
 
 
 def test_config__from_environ__sample():
     token = secrets.token_urlsafe()
     with tempfile.NamedTemporaryFile(suffix='.json') as temp_file:
-        assert settings.Config.from_environ(
+        assert config.Config.from_environ(
             {
                 'GITHUB_REPOSITORY': 'your_repository',
                 'COVERAGE_PATH': temp_file.name,
@@ -63,7 +64,7 @@ def test_config__from_environ__sample():
                 'COVERAGE_REPORT_URL': 'https://your_coverage_report_url',
                 'DEBUG': 'False',
             }
-        ) == settings.Config(
+        ) == config.Config(
             GITHUB_REPOSITORY='your_repository',
             COVERAGE_PATH=pathlib.Path(temp_file.name).resolve(),
             GITHUB_TOKEN=token,  # noqa: S106
@@ -87,7 +88,7 @@ def test_config__from_environ__sample():
 def test_config_required_pr_or_ref():
     with tempfile.NamedTemporaryFile(suffix='.json') as temp_file:
         with pytest.raises(ValueError):
-            settings.Config.from_environ(
+            config.Config.from_environ(
                 {
                     'GITHUB_TOKEN': 'your_token',
                     'GITHUB_REPOSITORY': 'your_repository',
@@ -97,8 +98,8 @@ def test_config_required_pr_or_ref():
 
 
 def test_config_invalid_annotation_type():
-    with pytest.raises(settings.InvalidAnnotationType):
-        settings.Config.from_environ({'ANNOTATION_TYPE': 'foo'})
+    with pytest.raises(InvalidAnnotationType):
+        config.Config.from_environ({'ANNOTATION_TYPE': 'foo'})
 
 
 @pytest.mark.parametrize(
@@ -116,78 +117,78 @@ def test_config_invalid_annotation_type():
     ],
 )
 def test_str_to_bool(input_data, output_data):
-    assert settings.str_to_bool(input_data) is output_data
+    assert config.str_to_bool(input_data) is output_data
 
 
 def test_config_clean_minimum_green():
-    value = settings.Config.clean_minimum_green('90')
+    value = config.Config.clean_minimum_green('90')
     assert value == decimal.Decimal('90')
 
 
 def test_config_clean_minimum_orange():
-    value = settings.Config.clean_minimum_orange('70')
+    value = config.Config.clean_minimum_orange('70')
     assert value == decimal.Decimal('70')
 
 
 def test_config_clean_annotate_missing_lines():
-    value = settings.Config.clean_annotate_missing_lines('True')
+    value = config.Config.clean_annotate_missing_lines('True')
     assert value is True
 
 
 def test_config_clean_skip_coverage():
-    value = settings.Config.clean_skip_coverage('False')
+    value = config.Config.clean_skip_coverage('False')
     assert value is False
 
 
 def test_config_clean_branch_coverage():
-    value = settings.Config.clean_branch_coverage('False')
+    value = config.Config.clean_branch_coverage('False')
     assert value is False
 
 
 def test_config_clean_complete_project_report():
-    value = settings.Config.clean_complete_project_report('True')
+    value = config.Config.clean_complete_project_report('True')
     assert value is True
 
 
 def test_config_clean_debug():
-    value = settings.Config.clean_debug('False')
+    value = config.Config.clean_debug('False')
     assert value is False
 
 
 def test_config_clean_annotation_type():
-    value = settings.Config.clean_annotation_type('warning')
+    value = config.Config.clean_annotation_type('warning')
     assert value == 'warning'
 
 
 def test_config_clean_annotation_type_invalid():
-    with pytest.raises(settings.InvalidAnnotationType):
-        settings.Config.clean_annotation_type('foo')
+    with pytest.raises(InvalidAnnotationType):
+        config.Config.clean_annotation_type('foo')
 
 
 def test_config_clean_github_pr_number():
-    value = settings.Config.clean_github_pr_number('123')
+    value = config.Config.clean_github_pr_number('123')
     assert value == 123
 
 
 def test_config_clean_coverage_path():
     with tempfile.NamedTemporaryFile(suffix='.json') as temp_file:
-        value = settings.Config.clean_coverage_path(temp_file.name)
+        value = config.Config.clean_coverage_path(temp_file.name)
         assert value == pathlib.Path(temp_file.name).resolve()
 
 
 def test_config_clean_annotations_output_path():
-    value = settings.Config.clean_annotations_output_path('/path/to/annotations')
+    value = config.Config.clean_annotations_output_path('/path/to/annotations')
     assert value == pathlib.Path('/path/to/annotations')
 
 
 def test_str_to_bool_invalid():
-    assert settings.str_to_bool('invalid') is False
+    assert config.str_to_bool('invalid') is False
 
 
 def test_config_required_clean_env_var_error():
     with tempfile.NamedTemporaryFile(suffix='.json') as temp_file:
         with pytest.raises(ValueError):
-            settings.Config.from_environ(
+            config.Config.from_environ(
                 {
                     'GITHUB_TOKEN': 'your_token',
                     'GITHUB_REPOSITORY': 'your_repository',
