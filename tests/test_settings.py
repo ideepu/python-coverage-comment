@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import decimal
 import pathlib
+import secrets
 import tempfile
 
 import pytest
@@ -41,15 +42,16 @@ def test_config_from_environ_missing():
 
 
 def test_config__from_environ__sample():
+    token = secrets.token_urlsafe()
     with tempfile.NamedTemporaryFile(suffix='.json') as temp_file:
         assert settings.Config.from_environ(
             {
-                'GITHUB_BASE_REF': 'main',
-                'GITHUB_TOKEN': 'your_token',
                 'GITHUB_REPOSITORY': 'your_repository',
                 'COVERAGE_PATH': temp_file.name,
-                'GITHUB_REF': 'main',
+                'GITHUB_TOKEN': token,
                 'GITHUB_PR_NUMBER': '123',
+                'GITHUB_REF': 'main',
+                'GITHUB_BASE_REF': 'main',
                 'SUBPROJECT_ID': 'your_subproject_id',
                 'MINIMUM_GREEN': '90',
                 'MINIMUM_ORANGE': '70',
@@ -65,7 +67,7 @@ def test_config__from_environ__sample():
         ) == settings.Config(
             GITHUB_REPOSITORY='your_repository',
             COVERAGE_PATH=pathlib.Path(temp_file.name).resolve(),
-            GITHUB_TOKEN='your_token',  # noqa: S106
+            GITHUB_TOKEN=token,  # noqa: S106
             GITHUB_PR_NUMBER=123,
             GITHUB_REF='main',
             GITHUB_BASE_REF='main',

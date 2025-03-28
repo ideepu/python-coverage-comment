@@ -54,7 +54,7 @@ To get started, follow these steps:
 3. create `.env`:
 
     ```bash
-    `echo "PIPENV_VENV_IN_PROJECT=1" >> .env`
+    echo "PIPENV_VENV_IN_PROJECT=1" >> .env
     ```
 
 4. Build the project:
@@ -86,7 +86,7 @@ To get started, follow these steps:
 - `GITHUB_PR_NUMBER`: The number of the pull request where the action is running. (Optional)
 - `GITHUB_REF`: The branch to run the action on. If not provided, it will be used to get the PR number. (Optional)
 
-Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required.
+Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` takes precedence if both mentioned.
 
 ## Optional Environment Variables
 

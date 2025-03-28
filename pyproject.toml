@@ -1,17 +1,4 @@
 [project]
-name = "python-coverage-comment"
-version = "2.1"
-description = "Create a Coverage report comment on Github PR"
-readme = "README.md"
-license = { file = "LICENSE" }
-maintainers = [
-  { name = "Pradeep Tammali", email = "pradeeptammaliwork@gmail.com" },
-]
-requires-python = ">=3.0"
-dependencies = [
-  "httpx",
-  "jinja2",
-]
 classifiers = [
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.0",
@@ -27,6 +14,19 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
 ]
+dependencies = [
+  "httpx",
+  "jinja2",
+]
+description = "Create a Coverage report comment on Github PR"
+license = {file = "LICENSE"}
+maintainers = [
+  {name = "Pradeep Tammali", email = "pradeeptammaliwork@gmail.com"},
+]
+name = "python-coverage-comment"
+readme = "README.md"
+requires-python = ">=3.0"
+version = "2.1"
 
 [project.urls]
 Homepage = "https://github.com/PradeepTammali/python-coverage-comment"
@@ -75,9 +75,9 @@ quote-style = 'single'
 'tests/*.py' = ['S101']
 
 [tool.isort]
-profile = "black"
-line_length = 120
 combine_as_imports = true
+line_length = 120
+profile = "black"
 
 [tool.flake8]
 ignore = ['E501', 'W503', 'W504']
@@ -89,6 +89,7 @@ env = ['APP_ENVIRONMENT = unittest']
 show_missing = true
 
 [[tool.mypy.overrides]]
+check_untyped_defs = true
 ignore_missing_imports = true
 implicit_optional = true
 module = 'codecov.*'

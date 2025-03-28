@@ -9,18 +9,26 @@ from unittest.mock import patch
 
 import pytest
 
-from codecov import coverage
+from codecov.coverage import (
+    Coverage,
+    CoverageInfo,
+    CoverageMetadata,
+    DiffCoverage,
+    FileCoverage,
+    FileDiffCoverage,
+    PytestCoverage,
+)
 
 
 def test_diff_violations(make_coverage_and_diff):
     _, diff = make_coverage_and_diff(
         """
         # file: a.py
-        + 1 missing
-        2 missing
-        + 3 missing
-        4 covered
-        + 5 covered
+        + 1 line missing
+        2 line missing
+        + 3 line missing
+        4 line covered
+        + 5 line covered
         """
     )
     assert diff.files[pathlib.Path('a.py')].violation_lines == [1, 3]
@@ -37,7 +45,7 @@ def test_diff_violations(make_coverage_and_diff):
     ],
 )
 def test_compute_coverage(num_covered, num_total, expected_coverage):
-    assert coverage.compute_coverage(num_covered, num_total) == decimal.Decimal(expected_coverage)
+    assert PytestCoverage().compute_coverage(num_covered, num_total) == decimal.Decimal(expected_coverage)
 
 
 @pytest.mark.parametrize(
@@ -50,13 +58,13 @@ def test_compute_coverage(num_covered, num_total, expected_coverage):
         (
             {pathlib.Path('codebase/code.py'): [1, 3]},
             {'codebase/code.py': {'executed_lines': [1, 2], 'missing_lines': [3]}},
-            coverage.DiffCoverage(
+            DiffCoverage(
                 total_num_lines=2,
                 total_num_violations=1,
                 total_percent_covered=decimal.Decimal('0.5'),
                 num_changed_lines=2,
                 files={
-                    pathlib.Path('codebase/code.py'): coverage.FileDiffCoverage(
+                    pathlib.Path('codebase/code.py'): FileDiffCoverage(
                         path=pathlib.Path('codebase/code.py'),
                         percent_covered=decimal.Decimal('0.5'),
                         added_statements=[1, 3],
@@ -75,7 +83,7 @@ def test_compute_coverage(num_covered, num_total, expected_coverage):
         (
             {pathlib.Path('codebase/code2.py'): [1, 3]},
             {'codebase/code.py': {'executed_lines': [1, 2], 'missing_lines': [3]}},
-            coverage.DiffCoverage(
+            DiffCoverage(
                 total_num_lines=0,
                 total_num_violations=0,
                 total_percent_covered=decimal.Decimal('1'),
@@ -89,13 +97,13 @@ def test_compute_coverage(num_covered, num_total, expected_coverage):
         (
             {pathlib.Path('codebase/code.py'): [4, 5, 6]},
             {'codebase/code.py': {'executed_lines': [1, 2, 3], 'missing_lines': [7]}},
-            coverage.DiffCoverage(
+            DiffCoverage(
                 total_num_lines=0,
                 total_num_violations=0,
                 total_percent_covered=decimal.Decimal('1'),
                 num_changed_lines=3,
                 files={
-                    pathlib.Path('codebase/code.py'): coverage.FileDiffCoverage(
+                    pathlib.Path('codebase/code.py'): FileDiffCoverage(
                         path=pathlib.Path('codebase/code.py'),
                         percent_covered=decimal.Decimal('1'),
                         added_statements=[],
@@ -124,13 +132,13 @@ def test_compute_coverage(num_covered, num_total, expected_coverage):
                     'missing_lines': [13],
                 },
             },
-            coverage.DiffCoverage(
+            DiffCoverage(
                 total_num_lines=4,  # 2 lines in code.py + 2 lines in other.py
                 total_num_violations=1,  # 1 line in other.py
                 total_percent_covered=decimal.Decimal('0.75'),  # 3/4 lines covered
                 num_changed_lines=5,  # 3 lines in code.py + 2 lines in other.py
                 files={
-                    pathlib.Path('codebase/code.py'): coverage.FileDiffCoverage(
+                    pathlib.Path('codebase/code.py'): FileDiffCoverage(
                         path=pathlib.Path('codebase/code.py'),
                         percent_covered=decimal.Decimal('1'),
                         added_statements=[5, 6],
@@ -138,7 +146,7 @@ def test_compute_coverage(num_covered, num_total, expected_coverage):
                         missing_statements=[],
                         added_lines=[4, 5, 6],
                     ),
-                    pathlib.Path('codebase/other.py'): coverage.FileDiffCoverage(
+                    pathlib.Path('codebase/other.py'): FileDiffCoverage(
                         path=pathlib.Path('codebase/other.py'),
                         percent_covered=decimal.Decimal('0.5'),
                         added_statements=[10, 13],
@@ -152,7 +160,7 @@ def test_compute_coverage(num_covered, num_total, expected_coverage):
     ],
 )
 def test_get_diff_coverage_info(make_coverage_obj, added_lines, update_obj, expected):
-    result = coverage.get_diff_coverage_info(added_lines=added_lines, coverage=make_coverage_obj(**update_obj))
+    result = PytestCoverage().get_diff_coverage_info(added_lines=added_lines, coverage=make_coverage_obj(**update_obj))
     assert result == expected
 
 
@@ -270,7 +278,7 @@ def test_get_diff_coverage_info(make_coverage_obj, added_lines, update_obj, expe
     ],
 )
 def test_parse_line_number_diff_line(line_number_diff_line, expected):
-    result = coverage.parse_diff_output(line_number_diff_line)
+    result = PytestCoverage().parse_diff_output(line_number_diff_line)
     assert result == expected
 
 
@@ -287,24 +295,24 @@ def test_parse_line_number_raise_value_error():
         '     assert calculate_sum(-1, 1) == 0\n'
     )
     with pytest.raises(ValueError):
-        coverage.parse_diff_output(lines)
+        PytestCoverage().parse_diff_output(lines)
 
 
 def test_extract_info(coverage_json):
-    expected_coverage = coverage.Coverage(
-        meta=coverage.CoverageMetadata(
+    expected_coverage = Coverage(
+        meta=CoverageMetadata(
             version='1.2.3',
             timestamp=datetime.datetime.fromisoformat('2000-01-01T00:00:00'),
             branch_coverage=True,
             show_contexts=False,
         ),
         files={
-            pathlib.Path('codebase/code.py'): coverage.FileCoverage(
+            pathlib.Path('codebase/code.py'): FileCoverage(
                 path=pathlib.Path('codebase/code.py'),
                 excluded_lines=[],
                 executed_lines=[1, 2, 3, 5, 13, 14],
                 missing_lines=[6, 8, 10, 11],
-                info=coverage.CoverageInfo(
+                info=CoverageInfo(
                     covered_lines=6,
                     num_statements=10,
                     percent_covered=60.0,
@@ -320,7 +328,7 @@ def test_extract_info(coverage_json):
                 missing_branches=[[6, 0], [8, 1], [10, 0], [11, 0]],
             )
         },
-        info=coverage.CoverageInfo(
+        info=CoverageInfo(
             covered_lines=6,
             num_statements=10,
             percent_covered=60.0,
@@ -334,24 +342,24 @@ def test_extract_info(coverage_json):
         ),
     )
 
-    assert coverage.extract_info(coverage_json) == expected_coverage
+    assert PytestCoverage().extract_info(coverage_json) == expected_coverage
 
 
 def test_get_coverage_info(coverage_json):
     with patch('pathlib.Path.open') as mock_open:
         mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_json)
-        result = coverage.get_coverage_info(pathlib.Path('path/to/file.json'))
+        result = PytestCoverage().get_coverage_info(pathlib.Path('path/to/file.json'))
 
-    assert result == coverage.extract_info(coverage_json)
+    assert result == PytestCoverage().extract_info(coverage_json)
 
 
 def test_get_coverage_info_json_decode_error():
     with patch('pathlib.Path.open') as mock_open:
         mock_open.return_value.__enter__.return_value.read.return_value = b'invalid json'
         with pytest.raises(json.JSONDecodeError):
-            coverage.get_coverage_info(pathlib.Path('path/to/file.json'))
+            PytestCoverage().get_coverage_info(pathlib.Path('path/to/file.json'))
 
 
 def test_get_coverage_info_file_not_found():
     with pytest.raises(FileNotFoundError):
-        coverage.get_coverage_info(pathlib.Path('path/to/file.json'))
+        PytestCoverage().get_coverage_info(pathlib.Path('path/to/file.json'))

@@ -8,13 +8,7 @@ import pathlib
 from collections.abc import MutableMapping
 from typing import Any
 
-
-class MissingEnvironmentVariable(Exception):
-    pass
-
-
-class InvalidAnnotationType(Exception):
-    pass
+from codecov.exceptions import InvalidAnnotationType, MissingEnvironmentVariable
 
 
 def path_below(path_str: str | pathlib.Path) -> pathlib.Path:
@@ -117,16 +111,16 @@ class Config:
     @classmethod
     def from_environ(cls, environ: MutableMapping[str, str]) -> Config:
         possible_variables = list(inspect.signature(cls).parameters)
-        config: dict[str, Any] = {k: v for k, v in environ.items() if k in possible_variables}
-        for key, value in list(config.items()):
+        config_dict: dict[str, Any] = {k: v for k, v in environ.items() if k in possible_variables}
+        for key, value in list(config_dict.items()):
             if func := getattr(cls, f'clean_{key.lower()}', None):
                 try:
-                    config[key] = func(value)
+                    config_dict[key] = func(value)
                 except ValueError as exc:
                     raise ValueError(f'{key}: {exc!s}') from exc
 
         try:
-            config_obj = cls(**config)
+            config_obj = cls(**config_dict)
         except TypeError as e:
             missing = {
                 name
