@@ -39,7 +39,7 @@ class Github:
         self.annotations_data_branch: str | None = annotations_data_branch
 
         self.user: User = self._init_user()
-        self.pr_number: int = self._init_pr_number(pr_number=pr_number, ref=ref)
+        self.pr_number, self.base_ref = self._init_pr_number(pr_number=pr_number, ref=ref)
         self.pr_diff: str = self._init_pr_diff()
         # TODO: Validate the user and email if annotations are not empty. We need these for committing to the branch
 
@@ -60,7 +60,7 @@ class Github:
             # TODO: Abort if we can't get the user details
         return User(name=GITHUB_CODECOV_LOGIN, email='', login=GITHUB_CODECOV_LOGIN)
 
-    def _init_pr_number(self, pr_number: int | None = None, ref: str | None = None) -> int:
+    def _init_pr_number(self, pr_number: int | None = None, ref: str | None = None) -> tuple[int, str]:
         if pr_number:
             log.info('Getting pull request #%d.', pr_number)
             try:
@@ -69,7 +69,7 @@ class Github:
                     log.debug('Pull request #%d is not in open state.', pr_number)
                     raise NotFound
 
-                return pull_request.number
+                return pull_request.number, pull_request.head.ref
             except Forbidden as exc:
                 log.error('Forbidden access to pull request #%d.', pr_number)
                 raise CannotGetPullRequest from exc
@@ -84,7 +84,7 @@ class Github:
                 pull_requests = self.client.repos(self.repository).pulls.get(state='open', per_page=100)
                 for pull_request in pull_requests:
                     if pull_request.head.ref == ref:
-                        return pull_request.number
+                        return pull_request.number, pull_request.head.ref
                 log.debug('No open pull request found for branch %s.', ref)
                 raise NotFound
             except Forbidden as exc:

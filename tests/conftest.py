@@ -407,6 +407,7 @@ def gh(gh_client, test_config: Config):
     github_mock.repository = test_config.GITHUB_REPOSITORY
     github_mock.annotations_data_branch = test_config.ANNOTATIONS_DATA_BRANCH
     github_mock.pr_number = test_config.GITHUB_PR_NUMBER
+    github_mock.base_ref = test_config.GITHUB_REF
     github_mock.pr_diff = 'diff --git a/codebase/code.py b/codebase/code.py\nindex 0000000..1111111 100644\n--- a/codebase/code.py\n+++ b/codebase/code.py\n@@ -1,2 +1,3 @@\n+line added\n line covered\n line covered\n'
     github_mock.user = MagicMock()
     github_mock.user.name = 'bar'

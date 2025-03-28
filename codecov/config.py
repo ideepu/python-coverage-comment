@@ -38,7 +38,6 @@ class Config:
     # Branch to run the action on (alternate to get PR number if not provided)
     # Example Organisation:branch-name (Company:sample-branch) or User:branch-name (user:sample-branch)
     GITHUB_REF: str | None = None
-    GITHUB_BASE_REF: str = 'main'
     SUBPROJECT_ID: str | None = None
     MINIMUM_GREEN: decimal.Decimal = decimal.Decimal('100')
     MINIMUM_ORANGE: decimal.Decimal = decimal.Decimal('70')

@@ -2,12 +2,6 @@
 
 Create a Coverage report comment on Github PR
 
-To generate the pytest coverage report
-
-```bash
-pipenv run pytest tests  --cov-branch --cov=codecov --cov-report=json:/tmp/report.json
-```
-
 Permissions needed for the Github Token:
 
 `Pull requests:read`
@@ -90,7 +84,6 @@ Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` 
 
 ## Optional Environment Variables
 
-- `GITHUB_BASE_REF`: The base branch for the pull request. Default is `main`.
 - `SUBPROJECT_ID`: The ID or URL of the subproject or report.
 - `MINIMUM_GREEN`: The minimum coverage percentage for green status. Default is 100.
 - `MINIMUM_ORANGE`: The minimum coverage percentage for orange status. Default is 70.
@@ -152,5 +145,9 @@ For example, if your project has a run.py file, you can run it using the followi
 
 That's it! You have successfully set up your local environment using Pipenv.
 
-This project is almost copy of [py-cov-action/python-coverage-comment-action]
-(<https://github.com/py-cov-action/python-coverage-comment-action.git>) with few modifications.
+---
+> **NOTE:**
+> This project is almost copy of
+> [py-cov-action/python-coverage-comment-action](<https://github.com/py-cov-action/python-coverage-comment-action.git>),
+> [LICENSE](<https://github.com/py-cov-action/python-coverage-comment-action/blob/main/LICENSE>) with few modifications.
+---

@@ -51,7 +51,6 @@ def test_config__from_environ__sample():
                 'GITHUB_TOKEN': token,
                 'GITHUB_PR_NUMBER': '123',
                 'GITHUB_REF': 'main',
-                'GITHUB_BASE_REF': 'main',
                 'SUBPROJECT_ID': 'your_subproject_id',
                 'MINIMUM_GREEN': '90',
                 'MINIMUM_ORANGE': '70',
@@ -70,7 +69,6 @@ def test_config__from_environ__sample():
             GITHUB_TOKEN=token,  # noqa: S106
             GITHUB_PR_NUMBER=123,
             GITHUB_REF='main',
-            GITHUB_BASE_REF='main',
             SUBPROJECT_ID='your_subproject_id',
             MINIMUM_GREEN=decimal.Decimal('90'),
             MINIMUM_ORANGE=decimal.Decimal('70'),

@@ -16,7 +16,7 @@ TEST_DATA_PR_DIFF = 'diff --git a/file.py b/file.py\nindex 1234567..abcdefg 1006
 
 class TestGitHub:
     @patch.object(Github, '_init_pr_diff', return_value=TEST_DATA_PR_DIFF)
-    @patch.object(Github, '_init_pr_number', return_value=123)
+    @patch.object(Github, '_init_pr_number', return_value=(123, 'feature/branch'))
     @patch.object(Github, '_init_user', return_value=User(name='bar', email='baz@foobar.com', login='foo'))
     def test_init(
         self,
@@ -38,13 +38,14 @@ class TestGitHub:
         assert gh.annotations_data_branch == test_config.ANNOTATIONS_DATA_BRANCH
         assert gh.user == User(name='bar', email='baz@foobar.com', login='foo')
         assert gh.pr_number == test_config.GITHUB_PR_NUMBER
+        assert gh.base_ref == 'feature/branch'
         assert gh.pr_diff == TEST_DATA_PR_DIFF
         gh_init_user_mock.assert_called_once()
         gh_init_pr_number_mock.assert_called_once()
         gh_init_pr_diff_mock.assert_called_once()
 
     @patch.object(Github, '_init_pr_diff', return_value=TEST_DATA_PR_DIFF)
-    @patch.object(Github, '_init_pr_number', return_value=123)
+    @patch.object(Github, '_init_pr_number', return_value=(123, 'feature/branch'))
     def test_init_user_login(
         self,
         gh_init_pr_number_mock: MagicMock,
@@ -142,7 +143,7 @@ class TestGitHub:
         gh_init_user_mock.reset_mock()
 
         session.register('GET', f'/repos/{test_config.GITHUB_REPOSITORY}/pulls/{test_config.GITHUB_PR_NUMBER}')(
-            json={'number': test_config.GITHUB_PR_NUMBER, 'state': 'open'}
+            json={'number': test_config.GITHUB_PR_NUMBER, 'head': {'ref': 'feature/branch'}, 'state': 'open'}
         )
         gh = Github(
             client=gh_client,
@@ -151,6 +152,7 @@ class TestGitHub:
             annotations_data_branch=test_config.ANNOTATIONS_DATA_BRANCH,
         )
         assert gh.pr_number == test_config.GITHUB_PR_NUMBER
+        assert gh.base_ref == 'feature/branch'
         gh_init_user_mock.assert_called_once()
         gh_init_pr_diff_mock.assert_called_once()
 
@@ -217,7 +219,7 @@ class TestGitHub:
         gh_init_user_mock.assert_called_once()
         gh_init_pr_diff_mock.assert_called_once()
 
-    @patch.object(Github, '_init_pr_number', return_value=123)
+    @patch.object(Github, '_init_pr_number', return_value=(123, 'feature/branch'))
     @patch.object(Github, '_init_user', return_value=User(name='bar', email='baz@foobar.com', login='foo'))
     def test_init_pr_diff(
         self,
@@ -271,7 +273,7 @@ class TestGitHub:
         gh_init_pr_number_mock.assert_called_once()
 
     @patch.object(Github, '_init_pr_diff', return_value=TEST_DATA_PR_DIFF)
-    @patch.object(Github, '_init_pr_number', return_value=123)
+    @patch.object(Github, '_init_pr_number', return_value=(123, 'feature/branch'))
     @patch.object(Github, '_init_user', return_value=User(name='bar', email='baz@foobar.com', login='foo'))
     def test_post_comment(
         self,
@@ -338,7 +340,7 @@ class TestGitHub:
         gh_init_pr_diff_mock.assert_called_once()
 
     @patch.object(Github, '_init_pr_diff', return_value=TEST_DATA_PR_DIFF)
-    @patch.object(Github, '_init_pr_number', return_value=123)
+    @patch.object(Github, '_init_pr_number', return_value=(123, 'feature/branch'))
     @patch.object(Github, '_init_user', return_value=User(name='bar', email='baz@foobar.com', login='foo'))
     def test_post_comment_update(
         self,
@@ -418,7 +420,7 @@ class TestGitHub:
         gh_init_pr_diff_mock.assert_called_once()
 
     @patch.object(Github, '_init_pr_diff', return_value=TEST_DATA_PR_DIFF)
-    @patch.object(Github, '_init_pr_number', return_value=123)
+    @patch.object(Github, '_init_pr_number', return_value=(123, 'feature/branch'))
     @patch.object(Github, '_init_user', return_value=User(name='bar', email='baz@foobar.com', login='foo'))
     def test_write_annotations_to_branch(
         self,
