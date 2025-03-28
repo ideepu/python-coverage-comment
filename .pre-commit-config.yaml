@@ -13,16 +13,18 @@ repos:
     -   id: check-builtin-literals
     -   id: check-docstring-first
     -   id: debug-statements
-    -   id: fix-encoding-pragma
     -   id: double-quote-string-fixer
     -   id: check-added-large-files
     -   id: check-merge-conflict
     -   id: name-tests-test
         # ensure tests match `test_.*\.py`
-        # NOTE: arg should be `--pytest-test-first` but only the following works now
-        args: ['--django']
+        args: ['--pytest-test-first']
     -   id: no-commit-to-branch
-        args: [--branch, master]
+        args: [--branch, main]
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v3.19.1
+    hooks:
+    -   id: pyupgrade
 -   repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
@@ -33,7 +35,7 @@ repos:
     -   id: python-no-eval
     -   id: python-no-log-warn
 -   repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.38.0
+    rev: v0.44.0
     hooks:
     -   id: markdownlint-fix
         args: ['--config', '.markdownlint.yaml']
