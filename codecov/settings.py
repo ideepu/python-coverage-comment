@@ -129,5 +129,5 @@ class Config:
                 for name, param in inspect.signature(cls).parameters.items()
                 if param.default is inspect.Parameter.empty
             } - set(environ)
-            raise MissingEnvironmentVariable(f" missing environment variable(s): {', '.join(missing)}") from e
+            raise MissingEnvironmentVariable(f' missing environment variable(s): {", ".join(missing)}') from e
         return config_obj

@@ -48,20 +48,22 @@ line-length = 120
 skip-string-normalization = true
 
 [tool.ruff]
+line-length = 120
+target-version = 'py311'
+
+[tool.ruff.lint]
 ignore = [
   # format
   'E501', # line too long
 ]
-line-length = 120
 select = [
   'E', # Errors
   'W', # Warnings
   'F', # Formatting
   'S', # Bandit
 ]
-target-version = 'py311'
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 max-complexity = 10
 
 [tool.ruff.lint.isort]
@@ -70,7 +72,7 @@ combine-as-imports = true
 [tool.ruff.format]
 quote-style = 'single'
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 # Ignore assert usage in tests
 'tests/*.py' = ['S101']
 
