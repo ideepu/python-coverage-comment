@@ -1,1 +1,1 @@
-[{"file": "codecov/coverage/base.py", "line_start": 105, "line_end": 105, "title": "Missing coverage", "message_type": "warning", "message": "Missing coverage on line 105"}]
+[{"file": "codecov/coverage/base.py", "line_start": 105, "line_end": 105, "title": "Missing coverage", "message_type": "warning", "message": "Missing coverage on line 105"}, {"file": "codecov/github.py", "line_start": 129, "line_end": 130, "title": "Missing branch coverage", "message_type": "warning", "message": "Missing branch coverage on lines 129-130"}]
