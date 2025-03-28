@@ -13,9 +13,9 @@ from unittest.mock import MagicMock
 import httpx
 import pytest
 
+from codecov.config import Config
 from codecov.coverage import Coverage, CoverageInfo, CoverageMetadata, DiffCoverage, FileCoverage, PytestCoverage
 from codecov.github_client import GitHubClient
-from codecov.settings import Config
 
 
 @pytest.fixture
