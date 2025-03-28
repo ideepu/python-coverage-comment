@@ -64,6 +64,7 @@ class FileDiffCoverage:
     # the statements (so it includes comments, blank lines, etc.)
     added_lines: list[int]
 
+    # TODO: Remove this property and use `missing_statements` instead
     # for backward compatibility
     @property
     def violation_lines(self) -> list[int]:
@@ -86,6 +87,7 @@ class BaseCoverage(ABC):
         return decimal.Decimal(num_covered) / decimal.Decimal(num_total)
 
     def get_coverage_info(self, coverage_path: pathlib.Path) -> Coverage:
+        # TODO: Write a custom exception here and handle it in the main script
         try:
             with coverage_path.open() as coverage_data:
                 json_coverage = json.loads(coverage_data.read())
