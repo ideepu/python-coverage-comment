@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import dataclasses
@@ -239,7 +238,7 @@ def get_file_url(  # pylint: disable=too-many-arguments
         return s
 
     # To link to a file in a PR, GitHub uses the link to the file overview combined with a SHA256 hash of the file path
-    s = f"https://github.com/{repo_name}/pull/{pr_number}/files#diff-{hashlib.sha256(str(filename).encode('utf-8')).hexdigest()}"
+    s = f'https://github.com/{repo_name}/pull/{pr_number}/files#diff-{hashlib.sha256(str(filename).encode("utf-8")).hexdigest()}'
 
     if lines is not None:
         # R stands for Right side of the diff. But since we generate these links for new code we only need the right side.

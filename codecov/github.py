@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import dataclasses
 
 from codecov.exceptions import (
@@ -27,7 +26,7 @@ class User:
 
 
 class Github:
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         client: GitHubClient,
         repository: str,

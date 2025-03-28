@@ -13,16 +13,18 @@ repos:
     -   id: check-builtin-literals
     -   id: check-docstring-first
     -   id: debug-statements
-    -   id: fix-encoding-pragma
     -   id: double-quote-string-fixer
     -   id: check-added-large-files
     -   id: check-merge-conflict
     -   id: name-tests-test
         # ensure tests match `test_.*\.py`
-        # NOTE: arg should be `--pytest-test-first` but only the following works now
-        args: ['--django']
+        args: ['--pytest-test-first']
     -   id: no-commit-to-branch
-        args: [--branch, master]
+        args: [--branch, main]
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v3.19.1
+    hooks:
+    -   id: pyupgrade
 -   repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
@@ -33,49 +35,30 @@ repos:
     -   id: python-no-eval
     -   id: python-no-log-warn
 -   repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.38.0
+    rev: v0.44.0
     hooks:
-    -   id: markdownlint-fix
-        args: ['--config', '.markdownlint.yaml']
+    -   id: markdownlint
+        args: ['--config', 'pyproject.toml', '--fix']
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.1.6
+  rev: v0.11.2
   hooks:
     - id: ruff
     - id: ruff-format
       args: ['--check']
--   repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 23.11.0
-    hooks:
-    -   id: black
-        args: ['--check']
--   repo: https://github.com/hhatto/autopep8
-    rev: v2.0.4
-    hooks:
-    -   id: autopep8
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.0
+    rev: v1.15.0
     hooks:
     -   id: mypy
         additional_dependencies: ['types-pytz', 'types-requests']
--   repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
-    hooks:
-    -   id: flake8
-        additional_dependencies: ['Flake8-pyproject==1.2.3']
 -   repo: https://github.com/PyCQA/bandit
-    rev: 1.7.5
+    rev: 1.8.3
     hooks:
     -   id: bandit
         args: ["-c", "pyproject.toml"]
 -   repo: https://github.com/pylint-dev/pylint
-    rev: v3.0.2
+    rev: v3.3.6
     hooks:
     -   id: pylint
--   repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
-    hooks:
-    -   id: isort
-        args: ['--check-only']
 -   repo: https://github.com/hadialqattan/pycln
     rev: v2.5.0
     hooks:
@@ -85,7 +68,7 @@ repos:
     hooks:
     -   id: checkmake
 - repo: https://github.com/tox-dev/pyproject-fmt
-  rev: "1.0.0"
+  rev: v2.5.1
   hooks:
     - id: pyproject-fmt
       args: ['--check']

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This module should contain only the things relevant to the badge being computed
 by shields.io

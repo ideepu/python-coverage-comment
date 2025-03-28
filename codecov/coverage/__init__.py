@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from .base import Coverage, CoverageInfo, CoverageMetadata, DiffCoverage, FileCoverage, FileDiffCoverage
 from .pytest import PytestCoverage
 

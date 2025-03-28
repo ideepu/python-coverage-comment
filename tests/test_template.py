@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import decimal
 import hashlib
 import pathlib
@@ -653,7 +652,7 @@ def test_get_file_url_no_lines():
     pr_number = 123
     base_ref = 'main'
 
-    expected_url = f"https://github.com/{repo_name}/pull/{pr_number}/files#diff-{hashlib.sha256(str(filename).encode('utf-8')).hexdigest()}"
+    expected_url = f'https://github.com/{repo_name}/pull/{pr_number}/files#diff-{hashlib.sha256(str(filename).encode("utf-8")).hexdigest()}'
     assert (
         template.get_file_url(filename, lines, repo_name=repo_name, pr_number=pr_number, base_ref=base_ref)
         == expected_url

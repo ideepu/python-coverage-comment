@@ -9,7 +9,6 @@ httpx = "*"
 jinja2 = "*"
 
 [dev-packages]
-ruff = "*"
 mypy = "*"
 pytest = "*"
 pytest-env = "*"
@@ -19,6 +18,7 @@ setuptools = "*"
 build = "*"
 pre-commit = "*"
 twine = "*"
+ruff = "*"
 
 [requires]
 python_version = "3.11"
