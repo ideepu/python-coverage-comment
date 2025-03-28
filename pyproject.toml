@@ -1,11 +1,17 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools",
+]
+
 [project]
 name = "python-coverage-comment"
 version = "2.1"
 description = "Create a Coverage report comment on Github PR"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 maintainers = [
-  {name = "Pradeep Tammali", email = "pradeeptammaliwork@gmail.com"},
+  { name = "Pradeep Tammali", email = "pradeeptammaliwork@gmail.com" },
 ]
 requires-python = ">=3.0"
 classifiers = [
@@ -22,80 +28,39 @@ classifiers = [
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
   "httpx",
   "jinja2",
 ]
-[project.urls]
-Homepage = "https://github.com/PradeepTammali/python-coverage-comment"
-Issues = "https://github.com/PradeepTammali/python-coverage-comment/issues"
-[project.scripts]
-codecov = "codecov.main:main"
-
-[build-system]
-build-backend = "setuptools.build_meta"
-requires = [
-  "setuptools",
-]
+urls.Homepage = "https://github.com/PradeepTammali/python-coverage-comment"
+urls.Issues = "https://github.com/PradeepTammali/python-coverage-comment/issues"
+scripts.codecov = "codecov.main:main"
 
 [tool.ruff]
+target-version = "py311"
+
 line-length = 120
-target-version = 'py311'
-
-[tool.ruff.lint]
-ignore = [
+format.quote-style = "single"
+lint.select = [
+  "E", # Errors
+  "F", # Formatting
+  "S", # Bandit
+  "W", # Warnings
+]
+lint.ignore = [
   # format
-  'E501', # line too long
+  "E501", # line too long
 ]
-select = [
-  'E', # Errors
-  'W', # Warnings
-  'F', # Formatting
-  'S', # Bandit
-]
-
-[tool.ruff.lint.mccabe]
-max-complexity = 10
-
-[tool.ruff.lint.isort]
-combine-as-imports = true
-
-[tool.ruff.format]
-quote-style = 'single'
-
-[tool.ruff.lint.per-file-ignores]
 # Ignore assert usage in tests
-'tests/*.py' = ['S101']
-
-[tool.markdownlint]
-default = true
-
-[MD007]
-indent = 4
-
-[MD013]
-# Number of characters
-line_length = 120
-# Number of characters for headings
-heading_line_length = 80
-# Number of characters for code blocks
-code_block_line_length = 120
-
-[tool.pytest.ini_options]
-env = ['APP_ENVIRONMENT = unittest']
-
-[tool.coverage.report]
-show_missing = true
-
-[[tool.mypy.overrides]]
-check_untyped_defs = true
-ignore_missing_imports = true
-implicit_optional = true
-module = 'codecov.*'
+lint.per-file-ignores.'tests/*.py' = [ "S101" ]
+lint.isort.combine-as-imports = true
+lint.mccabe.max-complexity = 10
 
 [tool.pylint.MASTER]
-ignore-paths = ['tests/*']
+ignore-paths = [ 'tests/*' ]
 
 [tool.pylint.FORMAT]
 indent-string = '    '
@@ -111,5 +76,31 @@ disable = '''
     too-few-public-methods
 '''
 
+[tool.pytest.ini_options]
+env = [ 'APP_ENVIRONMENT = unittest' ]
+
+[tool.coverage.report]
+show_missing = true
+
+[[tool.mypy.overrides]]
+check_untyped_defs = true
+ignore_missing_imports = true
+implicit_optional = true
+module = 'codecov.*'
+
+[tool.markdownlint]
+default = true
+
+[MD007]
+indent = 4
+
+[MD013]
+# Number of characters
+line_length = 120
+# Number of characters for headings
+heading_line_length = 80
+# Number of characters for code blocks
+code_block_line_length = 120
+
 [tool.bandit]
-exclude_dirs = ["tests/*"]
+exclude_dirs = [ "tests/*" ]

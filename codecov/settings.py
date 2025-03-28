@@ -5,7 +5,7 @@ import decimal
 import inspect
 import pathlib
 from collections.abc import MutableMapping
-from typing import Any
+from typing import Any, Callable
 
 from codecov.exceptions import InvalidAnnotationType, MissingEnvironmentVariable
 
@@ -115,7 +115,8 @@ class Config:
         possible_variables = list(inspect.signature(cls).parameters)
         config_dict: dict[str, Any] = {k: v for k, v in environ.items() if k in possible_variables}
         for key, value in list(config_dict.items()):
-            if func := getattr(cls, f'clean_{key.lower()}', None):
+            if hasattr(cls, f'clean_{key.lower()}'):
+                func: Callable = getattr(cls, f'clean_{key.lower()}')
                 try:
                     config_dict[key] = func(value)
                 except ValueError as exc:
