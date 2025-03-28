@@ -84,7 +84,6 @@ Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` 
 
 ## Optional Environment Variables
 
-- `GITHUB_BASE_REF`: The base branch for the pull request. Default is `main`.
 - `SUBPROJECT_ID`: The ID or URL of the subproject or report.
 - `MINIMUM_GREEN`: The minimum coverage percentage for green status. Default is 100.
 - `MINIMUM_ORANGE`: The minimum coverage percentage for orange status. Default is 70.

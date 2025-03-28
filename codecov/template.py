@@ -87,7 +87,10 @@ def get_comment_markdown(  # pylint: disable=too-many-arguments,too-many-locals
     env.filters['generate_badge'] = badge.get_static_badge_url
     env.filters['pluralize'] = pluralize
     env.filters['file_url'] = functools.partial(
-        get_file_url, repo_name=repo_name, pr_number=pr_number, base_ref=base_ref
+        get_file_url,
+        repo_name=repo_name,
+        pr_number=pr_number,
+        base_ref=base_ref,
     )
     env.filters['get_badge_color'] = functools.partial(
         badge.get_badge_color,

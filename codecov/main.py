@@ -89,7 +89,7 @@ class Main:
                 minimum_orange=self.config.MINIMUM_ORANGE,
                 repo_name=self.config.GITHUB_REPOSITORY,
                 pr_number=self.github.pr_number,
-                base_ref=self.config.GITHUB_BASE_REF,
+                base_ref=self.github.base_ref,
                 base_template=template.read_template_file('comment.md.j2'),
                 marker=marker,
                 subproject_id=self.config.SUBPROJECT_ID,
