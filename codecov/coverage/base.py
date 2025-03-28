@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from collections import deque
 from collections.abc import Sequence
 
+from codecov.exceptions import ConfigurationException
 from codecov.log import log
 
 
@@ -86,16 +87,15 @@ class BaseCoverage(ABC):
         return decimal.Decimal(num_covered) / decimal.Decimal(num_total)
 
     def get_coverage_info(self, coverage_path: pathlib.Path) -> Coverage:
-        # TODO: Write a custom exception here and handle it in the main script
         try:
             with coverage_path.open() as coverage_data:
                 json_coverage = json.loads(coverage_data.read())
-        except FileNotFoundError:
+        except FileNotFoundError as exc:
             log.error('Coverage report file not found: %s', coverage_path)
-            raise
-        except json.JSONDecodeError:
+            raise ConfigurationException from exc
+        except json.JSONDecodeError as exc:
             log.error('Invalid JSON format in coverage report file: %s', coverage_path)
-            raise
+            raise ConfigurationException from exc
 
         return self.extract_info(data=json_coverage)
 

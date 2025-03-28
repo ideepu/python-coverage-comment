@@ -120,9 +120,8 @@ class Github:
             log.error('Comment exceeds allowed size(65536)')
             raise CannotPostComment
 
-        # TODO: Try and see if you can refactor this to use single request
-        # issue_comments_path.patch(body=contents)
-        # TODO: Make scope only for pull request not for issues
+        # Pull request review comments are comments made on a portion of the unified diff during a pull request review.
+        # Issue comments are comments on the entire pull request. We need issue comments.
         issue_comments_path = self.client.repos(self.repository).issues(self.pr_number).comments
         comments_path = self.client.repos(self.repository).issues.comments
         for comment in issue_comments_path.get():

@@ -5,7 +5,7 @@ from codecov import diff_grouper, groups, template
 from codecov.config import Config
 from codecov.coverage import PytestCoverage
 from codecov.coverage.base import Coverage, DiffCoverage
-from codecov.exceptions import CoreProcessingException, MissingMarker, TemplateException
+from codecov.exceptions import ConfigurationException, CoreProcessingException, MissingMarker, TemplateException
 from codecov.github import Github
 from codecov.github_client import GitHubClient
 from codecov.log import log, setup as log_setup
@@ -51,7 +51,12 @@ class Main:
 
     def _process_coverage(self):
         log.info('Processing coverage data')
-        coverage = self.coverage_module.get_coverage_info(coverage_path=self.config.COVERAGE_PATH)
+        try:
+            coverage = self.coverage_module.get_coverage_info(coverage_path=self.config.COVERAGE_PATH)
+        except ConfigurationException as e:
+            log.error('Error processing coverage data.')
+            raise CoreProcessingException from e
+
         if self.config.BRANCH_COVERAGE:
             coverage = diff_grouper.fill_branch_missing_groups(coverage=coverage)
         added_lines = self.coverage_module.parse_diff_output(diff=self.github.pr_diff)
