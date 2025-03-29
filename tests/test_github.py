@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from codecov.exceptions import CannotGetBranch, CannotGetPullRequest, CannotPostComment
-from codecov.github import COMMIT_MESSAGE, GITHUB_CODECOV_LOGIN, Github, User
+from codecov.exceptions import CannotGetBranch, CannotGetPullRequest, CannotGetUser, CannotPostComment
+from codecov.github import COMMIT_MESSAGE, Github, User
 from codecov.groups import Annotation, AnnotationEncoder
 
 TEST_DATA_PR_DIFF = 'diff --git a/file.py b/file.py\nindex 1234567..abcdefg 100644\n--- a/file.py\n+++ b/file.py\n@@ -1,2 +1,2 @@\n-foo\n+bar\n-baz\n+qux\n'
@@ -54,19 +54,29 @@ class TestGitHub:
         test_config,
         gh_client,
     ):
+        session.register('GET', '/user')(status_code=401)
+        with pytest.raises(CannotGetUser):
+            Github(
+                client=gh_client,
+                repository=test_config.GITHUB_REPOSITORY,
+                pr_number=test_config.GITHUB_PR_NUMBER,
+                ref=test_config.GITHUB_REF,
+                annotations_data_branch=test_config.ANNOTATIONS_DATA_BRANCH,
+            )
+        gh_init_pr_number_mock.assert_not_called()
+        gh_init_pr_diff_mock.assert_not_called()
+
         session.register('GET', '/user')(status_code=403)
-        gh = Github(
-            client=gh_client,
-            repository=test_config.GITHUB_REPOSITORY,
-            pr_number=test_config.GITHUB_PR_NUMBER,
-            ref=test_config.GITHUB_REF,
-            annotations_data_branch=test_config.ANNOTATIONS_DATA_BRANCH,
-        )
-        assert gh.user == User(name=GITHUB_CODECOV_LOGIN, email='', login=GITHUB_CODECOV_LOGIN)
-        gh_init_pr_number_mock.assert_called_once()
-        gh_init_pr_diff_mock.assert_called_once()
-        gh_init_pr_number_mock.reset_mock()
-        gh_init_pr_diff_mock.reset_mock()
+        with pytest.raises(CannotGetUser):
+            Github(
+                client=gh_client,
+                repository=test_config.GITHUB_REPOSITORY,
+                pr_number=test_config.GITHUB_PR_NUMBER,
+                ref=test_config.GITHUB_REF,
+                annotations_data_branch=test_config.ANNOTATIONS_DATA_BRANCH,
+            )
+        gh_init_pr_number_mock.assert_not_called()
+        gh_init_pr_diff_mock.assert_not_called()
 
         session.register('GET', '/user')(json={'login': 'foo', 'id': 123, 'name': 'bar', 'email': 'baz'})
         gh = Github(
