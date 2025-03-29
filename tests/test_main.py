@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from codecov.exceptions import CoreProcessingException, MissingMarker, TemplateException
+from codecov.exceptions import ConfigurationException, CoreProcessingException, MissingMarker, TemplateException
 from codecov.main import Main
 
 
@@ -27,6 +27,14 @@ class TestMain:
                 assert main.github.annotations_data_branch == test_config.ANNOTATIONS_DATA_BRANCH
 
     def test_process_coverage(self, test_config, gh, coverage_obj, diff_coverage_obj):
+        with patch.object(Main, '_init_config', return_value=test_config):
+            with patch.object(Main, '_init_github', return_value=gh):
+                main = Main()
+                main.coverage_module = MagicMock()
+                main.coverage_module.get_coverage_info = MagicMock(side_effect=ConfigurationException)
+                with pytest.raises(CoreProcessingException):
+                    main._process_coverage()
+
         with patch.object(Main, '_init_config', return_value=test_config):
             with patch.object(Main, '_init_github', return_value=gh):
                 main = Main()
@@ -158,7 +166,7 @@ class TestMain:
             with patch.object(Main, '_init_github', return_value=gh):
                 main = Main()
                 main.config.ANNOTATE_MISSING_LINES = True
-                main.config.ANNOTATIONS_OUTPUT_PATH = pathlib.Path(tempfile.mkstemp(suffix='.json')[1])
+                main.config.ANNOTATIONS_OUTPUT_PATH = pathlib.Path(tempfile.mkdtemp())
                 main.coverage = coverage_obj
                 main.diff_coverage = diff_coverage_obj
                 assert main._generate_annotations() is None
@@ -170,7 +178,7 @@ class TestMain:
                 main = Main()
                 main.config.BRANCH_COVERAGE = True
                 main.config.ANNOTATE_MISSING_LINES = True
-                main.config.ANNOTATIONS_OUTPUT_PATH = pathlib.Path(tempfile.mkstemp(suffix='.json')[1])
+                main.config.ANNOTATIONS_OUTPUT_PATH = pathlib.Path(tempfile.mkdtemp())
                 main.coverage = coverage_obj
                 main.diff_coverage = diff_coverage_obj
                 assert main._generate_annotations() is None

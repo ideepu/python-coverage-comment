@@ -5,7 +5,7 @@ from codecov import diff_grouper, groups, template
 from codecov.config import Config
 from codecov.coverage import PytestCoverage
 from codecov.coverage.base import Coverage, DiffCoverage
-from codecov.exceptions import CoreProcessingException, MissingMarker, TemplateException
+from codecov.exceptions import ConfigurationException, CoreProcessingException, MissingMarker, TemplateException
 from codecov.github import Github
 from codecov.github_client import GitHubClient
 from codecov.log import log, setup as log_setup
@@ -51,7 +51,12 @@ class Main:
 
     def _process_coverage(self):
         log.info('Processing coverage data')
-        coverage = self.coverage_module.get_coverage_info(coverage_path=self.config.COVERAGE_PATH)
+        try:
+            coverage = self.coverage_module.get_coverage_info(coverage_path=self.config.COVERAGE_PATH)
+        except ConfigurationException as e:
+            log.error('Error processing coverage data.')
+            raise CoreProcessingException from e
+
         if self.config.BRANCH_COVERAGE:
             coverage = diff_grouper.fill_branch_missing_groups(coverage=coverage)
         added_lines = self.coverage_module.parse_diff_output(diff=self.github.pr_diff)
@@ -64,7 +69,7 @@ class Main:
             log.info('Skipping coverage report generation.')
             return
 
-        log.info('Generating comment for PR')
+        log.info('Generating comment for PR #%s', self.github.pr_number)
         marker = template.get_marker(marker_id=self.config.SUBPROJECT_ID)
         files_info, count_files, changed_files_info = template.select_changed_files(
             coverage=self.coverage,
@@ -99,18 +104,15 @@ class Main:
             )
         except MissingMarker as e:
             log.error(
-                'Marker not found. This error can happen if you defined a custom comment '
-                "template that doesn't inherit the base template and you didn't include "
-                '``{{ marker }}``. The marker is necessary for this action to recognize '
-                "its own comment and avoid making new comments or overwriting someone else's "
-                'comment.'
+                '``{{ %s }}`` marker not found. The marker is necessary for this action to recognize '
+                "its own comment and avoid making new comments or overwriting someone else's comment.",
+                marker,
             )
             raise CoreProcessingException from e
         except TemplateException as e:
             log.error(
                 'There was a rendering error when computing the text of the comment to post '
-                "on the PR. Please see the traceback, in particular if you're using a custom "
-                'template.'
+                'on the PR. Please see the traceback for more information.'
             )
             raise CoreProcessingException from e
 
@@ -125,7 +127,7 @@ class Main:
         log.info('Generating annotations for missing lines.')
         annotations = diff_grouper.get_diff_missing_groups(coverage=self.coverage, diff_coverage=self.diff_coverage)
         formatted_annotations = groups.create_missing_coverage_annotations(
-            annotation_type=self.config.ANNOTATION_TYPE,
+            annotation_type=self.config.ANNOTATION_TYPE.value,
             annotations=annotations,
         )
 
@@ -136,7 +138,7 @@ class Main:
             )
             formatted_annotations.extend(
                 groups.create_missing_coverage_annotations(
-                    annotation_type=self.config.ANNOTATION_TYPE,
+                    annotation_type=self.config.ANNOTATION_TYPE.value,
                     annotations=branch_annotations,
                     branch=True,
                 )
@@ -155,12 +157,13 @@ class Main:
         print(reset, end='')
 
         # Save to file
-        # TODO: Take the folder path instead of the file path
+        file_name = f'{self.github.pr_number}-annotations.json'
         if self.config.ANNOTATIONS_OUTPUT_PATH:
-            log.info('Writing annotations to file.')
-            with self.config.ANNOTATIONS_OUTPUT_PATH.open('w+') as annotations_file:
+            log.info('Writing annotations to file %s', file_name)
+            with self.config.ANNOTATIONS_OUTPUT_PATH.joinpath(file_name).open('w+') as annotations_file:
                 json.dump(formatted_annotations, annotations_file, cls=groups.AnnotationEncoder)
 
+        # Write to branch
         if self.config.ANNOTATIONS_DATA_BRANCH:
             log.info('Writing annotations to branch.')
             self.github.write_annotations_to_branch(annotations=formatted_annotations)

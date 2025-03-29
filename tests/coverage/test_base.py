@@ -10,6 +10,7 @@ import pytest
 
 from codecov.coverage import Coverage, DiffCoverage, FileDiffCoverage
 from codecov.coverage.base import BaseCoverage
+from codecov.exceptions import ConfigurationException
 
 
 class BaseCoverageDemo(BaseCoverage):
@@ -54,10 +55,10 @@ class TestBase:
 
         with patch('pathlib.Path.open') as mock_open:
             mock_open.return_value.__enter__.return_value.read.return_value = b'invalid json'
-            with pytest.raises(json.JSONDecodeError):
+            with pytest.raises(ConfigurationException):
                 BaseCoverageDemo().get_coverage_info(pathlib.Path(tempfile.mkstemp(suffix='.json')[1]))
 
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(ConfigurationException):
             BaseCoverageDemo().get_coverage_info(pathlib.Path('path/to/file.json'))
 
     @pytest.mark.parametrize(

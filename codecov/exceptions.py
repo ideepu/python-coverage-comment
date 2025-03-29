@@ -50,10 +50,6 @@ class MissingEnvironmentVariable(ConfigurationException):
     pass
 
 
-class InvalidAnnotationType(ConfigurationException):
-    pass
-
-
 class TemplateBaseException(CoreBaseException):
     pass
 

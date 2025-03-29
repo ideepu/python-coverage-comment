@@ -92,14 +92,14 @@ def make_coverage() -> Callable[[str, bool], Coverage]:
                 )
             if any(
                 x in line
-                for x in {
+                for x in (
                     'line covered',
                     'line missing',
                     'line excluded',
                     'branch covered',
                     'branch missing',
                     'branch partial',
-                }
+                )
             ):
                 coverage_obj.files[current_file].info.num_statements += 1
                 coverage_obj.info.num_statements += 1

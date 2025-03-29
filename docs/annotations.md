@@ -8,8 +8,8 @@ By default, these annotations are written to the console, but you can also choos
 
 ## Storing Annotations
 
-1. **To a File**:
-   - Set the file path in `ANNOTATIONS_OUTPUT_PATH`.
+1. **To a Folder**:
+   - Set the folder path in `ANNOTATIONS_OUTPUT_PATH`.
 
 2. **To a Branch**:
    - Set the branch name in `ANNOTATIONS_DATA_BRANCH`.

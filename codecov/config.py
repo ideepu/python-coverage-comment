@@ -5,11 +5,10 @@ import decimal
 import inspect
 import pathlib
 from collections.abc import MutableMapping
+from enum import Enum
 from typing import Any, Callable
 
-from codecov.exceptions import InvalidAnnotationType, MissingEnvironmentVariable
-
-# TODO: Rename this file to config.py
+from codecov.exceptions import MissingEnvironmentVariable
 
 
 def path_below(path_str: str | pathlib.Path) -> pathlib.Path:
@@ -26,8 +25,14 @@ def str_to_bool(value: str) -> bool:
     return value.lower() in ('1', 'true', 'yes')
 
 
+class AnnotationType(Enum):
+    NOTICE = 'notice'
+    WARNING = 'warning'
+    ERROR = 'error'
+
+
 # pylint: disable=invalid-name, too-many-instance-attributes
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class Config:
     """This object defines the environment variables"""
 
@@ -44,8 +49,7 @@ class Config:
     BRANCH_COVERAGE: bool = False
     SKIP_COVERAGE: bool = False
     ANNOTATE_MISSING_LINES: bool = False
-    # TODO: Make it enum
-    ANNOTATION_TYPE: str = 'warning'
+    ANNOTATION_TYPE: AnnotationType = AnnotationType.WARNING
     ANNOTATIONS_OUTPUT_PATH: pathlib.Path | None = None
     ANNOTATIONS_DATA_BRANCH: str | None = None
     MAX_FILES_IN_COMMENT: int = 25
@@ -88,12 +92,8 @@ class Config:
         return str_to_bool(value)
 
     @classmethod
-    def clean_annotation_type(cls, value: str) -> str:
-        if value not in {'notice', 'warning', 'error'}:
-            raise InvalidAnnotationType(
-                f'The annotation type {value} is not valid. Please choose from notice, warning or error'
-            )
-        return value
+    def clean_annotation_type(cls, value: str) -> AnnotationType:
+        return AnnotationType(value)
 
     @classmethod
     def clean_github_pr_number(cls, value: str) -> int:
@@ -105,7 +105,10 @@ class Config:
 
     @classmethod
     def clean_annotations_output_path(cls, value: str) -> pathlib.Path:
-        return pathlib.Path(value)
+        path = pathlib.Path(value)
+        if path.exists() or path.is_dir():
+            return path
+        raise ValueError
 
     # We need to type environ as a MutableMapping because that's what
     # os.environ is, and `dict[str, str]` is not enough
