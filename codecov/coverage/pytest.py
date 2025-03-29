@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import datetime
+import decimal
 import pathlib
 
 from codecov.coverage.base import BaseCoverage, Coverage, CoverageInfo, CoverageMetadata, FileCoverage
 
 
 class PytestCoverage(BaseCoverage):
+    def _convert_to_decimal(self, value: float, precision: int = 2) -> decimal.Decimal:
+        return decimal.Decimal(str(float(value) / 100)).quantize(decimal.Decimal(10) ** -precision)
+
     def extract_info(self, data: dict) -> Coverage:
         """
         {
@@ -69,7 +73,7 @@ class PytestCoverage(BaseCoverage):
                     info=CoverageInfo(
                         covered_lines=file_data['summary']['covered_lines'],
                         num_statements=file_data['summary']['num_statements'],
-                        percent_covered=file_data['summary']['percent_covered'],
+                        percent_covered=self._convert_to_decimal(file_data['summary']['percent_covered']),
                         percent_covered_display=file_data['summary']['percent_covered_display'],
                         missing_lines=file_data['summary']['missing_lines'],
                         excluded_lines=file_data['summary']['excluded_lines'],
@@ -84,7 +88,7 @@ class PytestCoverage(BaseCoverage):
             info=CoverageInfo(
                 covered_lines=data['totals']['covered_lines'],
                 num_statements=data['totals']['num_statements'],
-                percent_covered=data['totals']['percent_covered'],
+                percent_covered=self._convert_to_decimal(data['totals']['percent_covered']),
                 percent_covered_display=data['totals']['percent_covered_display'],
                 missing_lines=data['totals']['missing_lines'],
                 excluded_lines=data['totals']['excluded_lines'],

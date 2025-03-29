@@ -24,7 +24,7 @@ class TestPytestCoverage:
                     info=CoverageInfo(
                         covered_lines=6,
                         num_statements=10,
-                        percent_covered=60.0,
+                        percent_covered=PytestCoverage()._convert_to_decimal(60.0),
                         percent_covered_display='60%',
                         missing_lines=4,
                         excluded_lines=0,
@@ -40,7 +40,7 @@ class TestPytestCoverage:
             info=CoverageInfo(
                 covered_lines=6,
                 num_statements=10,
-                percent_covered=60.0,
+                percent_covered=PytestCoverage()._convert_to_decimal(60.0),
                 percent_covered_display='60%',
                 missing_lines=4,
                 excluded_lines=0,

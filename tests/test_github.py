@@ -361,6 +361,11 @@ class TestGitHub:
         test_config,
         gh_client,
     ):
+        comment_with_no_marker = {
+            'user': {'login': 'foo'},
+            'body': 'Hey! Hi! How are you?',
+            'id': 123,
+        }
         comment = {
             'user': {'login': 'foo'},
             'body': 'Hey! Hi! How are you? marker',
@@ -368,7 +373,7 @@ class TestGitHub:
         }
         session.register(
             'GET', f'/repos/{test_config.GITHUB_REPOSITORY}/issues/{test_config.GITHUB_PR_NUMBER}/comments'
-        )(json=[comment])
+        )(json=[comment_with_no_marker, comment])
         session.register(
             'PATCH',
             f'/repos/{test_config.GITHUB_REPOSITORY}/issues/comments/{comment["id"]}',
