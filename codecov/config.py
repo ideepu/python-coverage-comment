@@ -53,6 +53,7 @@ class Config:
     ANNOTATIONS_OUTPUT_PATH: pathlib.Path | None = None
     ANNOTATIONS_DATA_BRANCH: str | None = None
     MAX_FILES_IN_COMMENT: int = 25
+    SKIP_COVERED_FILES_IN_REPORT: bool = True
     COMPLETE_PROJECT_REPORT: bool = False
     COVERAGE_REPORT_URL: str | None = None
     # Only for debugging, not exposed in the action
@@ -85,6 +86,10 @@ class Config:
 
     @classmethod
     def clean_complete_project_report(cls, value: str) -> bool:
+        return str_to_bool(value)
+
+    @classmethod
+    def clean_skip_covered_files_in_report(cls, value: str) -> bool:
         return str_to_bool(value)
 
     @classmethod

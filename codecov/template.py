@@ -142,11 +142,11 @@ def get_comment_markdown(  # pylint: disable=too-many-arguments,too-many-locals
 
 
 def select_changed_files(
-    *,
     coverage: Coverage,
     diff_coverage: DiffCoverage,
     max_files: int | None,
-) -> tuple[list[FileInfo], int, list[FileInfo]]:
+    skip_covered_files_in_report: bool,
+) -> tuple[list[FileInfo], int]:
     """
     Selects the MAX_FILES files with the most new missing lines sorted by path
     These are the files which have been modified in the PR
@@ -156,42 +156,40 @@ def select_changed_files(
     files = []
     for path, coverage_file in coverage.files.items():
         diff_coverage_file = diff_coverage.files.get(path)
+        if not (diff_coverage_file and diff_coverage_file.added_statements):
+            continue
+
+        if skip_covered_files_in_report and percentage_value(diff_coverage_file.percent_covered) == 100:
+            continue
 
         file_info = FileInfo(
             path=path,
             coverage=coverage_file,
             diff=diff_coverage_file,
         )
-        has_diff = bool(diff_coverage_file and diff_coverage_file.added_statements)
+        files.append(file_info)
 
-        if has_diff:
-            files.append(file_info)
-
-    return sort_and_trucate_files(files=files, max_files=max_files), len(files), files
+    return sort_and_trucate_files(files=files, max_files=max_files), len(files)
 
 
 def select_files(
-    *,
     coverage: Coverage,
-    changed_files_info: list[FileInfo],
     max_files: int | None,
+    skip_covered_files_in_report: bool,
 ) -> tuple[list[FileInfo], int]:
     """
     Selects the no of `max_files` files from the whole project coverage
-    Selects only files which are not in changed files report
     Select only files which have statements (not empty files)
+    Select only files which have lines missing coverage if `skip_covered_files_in_report` is True
     """
 
     files = []
-    changed_files_path = {file.path for file in changed_files_info}
     for path, coverage_file in coverage.files.items():
-        # Don't show the report for files that have been modified in the PR
-        # This is gonne be covered in the changed files report
-        if path in changed_files_path:
-            continue
-
         # Don't show the report for files that have no statements
         if coverage_file.info.num_statements == 0:
+            continue
+
+        if skip_covered_files_in_report and percentage_value(coverage_file.info.percent_covered) == 100:
             continue
 
         file_info = FileInfo(path=path, coverage=coverage_file, diff=None)

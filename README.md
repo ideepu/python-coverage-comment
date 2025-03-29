@@ -51,6 +51,7 @@ Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` 
 - `ANNOTATE_MISSING_LINES`: Whether to annotate missing lines in the coverage report. Default is False.
 - `ANNOTATION_TYPE`: The type of annotation to use for missing lines. 'notice' or 'warning' or 'error'. Default is 'warning'.
 - `MAX_FILES_IN_COMMENT`: The maximum number of files to include in the coverage report comment. Default is 25.
+- `SKIP_COVERED_FILES_IN_REPORT`: Skip the files with coverage 100% from the report. Default is True.
 - `COMPLETE_PROJECT_REPORT`: Whether to include the complete project coverage report in the comment. Default is False.
 - `COVERAGE_REPORT_URL`: URL of the full coverage report to mention in the comment.
 - `DEBUG`: Whether to enable debug mode. Default is False.

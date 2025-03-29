@@ -149,6 +149,11 @@ def test_config_clean_complete_project_report():
     assert value is True
 
 
+def test_config_clean_skip_covered_files_in_report():
+    value = config.Config.clean_skip_covered_files_in_report('True')
+    assert value is True
+
+
 def test_config_clean_debug():
     value = config.Config.clean_debug('False')
     assert value is False

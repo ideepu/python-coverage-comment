@@ -111,10 +111,11 @@ def test_template_error(coverage_obj, diff_coverage_obj):
 
 
 def test_get_comment_markdown(coverage_obj, diff_coverage_obj):
-    chaned_files, total, files = template.select_changed_files(
+    chaned_files, total = template.select_changed_files(
         coverage=coverage_obj,
         diff_coverage=diff_coverage_obj,
         max_files=25,
+        skip_covered_files_in_report=True,
     )
     result = (
         template.get_comment_markdown(
@@ -122,7 +123,7 @@ def test_get_comment_markdown(coverage_obj, diff_coverage_obj):
             diff_coverage=diff_coverage_obj,
             coverage_files=chaned_files,
             count_coverage_files=total,
-            files=files,
+            files=chaned_files,
             count_files=total,
             max_files=25,
             minimum_green=decimal.Decimal('100'),
@@ -153,17 +154,18 @@ def test_get_comment_markdown(coverage_obj, diff_coverage_obj):
 
 
 def test_comment_template(coverage_obj, diff_coverage_obj):
-    chaned_files, total, files = template.select_changed_files(
+    chaned_files, total = template.select_changed_files(
         coverage=coverage_obj,
         diff_coverage=diff_coverage_obj,
         max_files=25,
+        skip_covered_files_in_report=True,
     )
     result = template.get_comment_markdown(
         coverage=coverage_obj,
         diff_coverage=diff_coverage_obj,
         coverage_files=chaned_files,
         count_coverage_files=total,
-        files=files,
+        files=chaned_files,
         count_files=total,
         max_files=25,
         minimum_green=decimal.Decimal('100'),
@@ -179,17 +181,18 @@ def test_comment_template(coverage_obj, diff_coverage_obj):
 
 
 def test_comment_template_branch_coverage(coverage_obj, diff_coverage_obj):
-    chaned_files, total, files = template.select_changed_files(
+    chaned_files, total = template.select_changed_files(
         coverage=coverage_obj,
         diff_coverage=diff_coverage_obj,
         max_files=25,
+        skip_covered_files_in_report=True,
     )
     result = template.get_comment_markdown(
         coverage=coverage_obj,
         diff_coverage=diff_coverage_obj,
         coverage_files=chaned_files,
         count_coverage_files=total,
-        files=files,
+        files=chaned_files,
         count_files=total,
         max_files=25,
         minimum_green=decimal.Decimal('100'),
@@ -239,7 +242,7 @@ def test_template_no_files(coverage_obj):
 
 
 @pytest.mark.parametrize(
-    'current_code_and_diff, max_files, expected_files, expected_total, expected_total_files',
+    'current_code_and_diff, max_files, expected_files, expected_total, covered_skipped_expected_files, covered_skipped_expected_total',
     [
         pytest.param(
             """
@@ -250,6 +253,7 @@ def test_template_no_files(coverage_obj):
             [],
             0,
             [],
+            0,
             id='unmodified',
         ),
         pytest.param(
@@ -262,6 +266,7 @@ def test_template_no_files(coverage_obj):
             [],
             0,
             [],
+            0,
             id='info_did_not_change',
         ),
         pytest.param(
@@ -273,6 +278,7 @@ def test_template_no_files(coverage_obj):
             [],
             0,
             [],
+            0,
             id='info_did_change',
         ),
         pytest.param(
@@ -283,7 +289,8 @@ def test_template_no_files(coverage_obj):
             2,
             ['a.py'],
             1,
-            ['a.py'],
+            [],
+            0,
             id='with_diff',
         ),
         pytest.param(
@@ -296,7 +303,8 @@ def test_template_no_files(coverage_obj):
             2,
             ['a.py', 'b.py'],
             2,
-            ['a.py', 'b.py'],
+            [],
+            0,
             id='ordered',
         ),
         pytest.param(
@@ -310,7 +318,8 @@ def test_template_no_files(coverage_obj):
             1,
             ['b.py'],
             2,
-            ['a.py', 'b.py'],
+            ['b.py'],
+            1,
             id='info_did_change',
         ),
         pytest.param(
@@ -325,7 +334,8 @@ def test_template_no_files(coverage_obj):
             2,
             ['b.py', 'c.py'],
             3,
-            ['a.py', 'b.py', 'c.py'],
+            ['b.py', 'c.py'],
+            2,
             id='truncated_and_ordered',
         ),
         pytest.param(
@@ -342,7 +352,8 @@ def test_template_no_files(coverage_obj):
             2,
             ['b.py', 'c.py'],
             2,
-            ['b.py', 'c.py'],
+            [],
+            0,
             id='truncated_and_ordered_sort_order_advanced',
         ),
         pytest.param(
@@ -356,7 +367,8 @@ def test_template_no_files(coverage_obj):
             None,
             ['a.py', 'b.py'],
             2,
-            ['a.py', 'b.py'],
+            ['b.py'],
+            1,
             id='max_none',
         ),
     ],
@@ -367,21 +379,31 @@ def test_select_changed_files(
     max_files,
     expected_files,
     expected_total,
-    expected_total_files,
+    covered_skipped_expected_files,
+    covered_skipped_expected_total,
 ):
     cov, diff_cov = make_coverage_and_diff(current_code_and_diff)
-    files, total, total_files = template.select_changed_files(
+    files, total = template.select_changed_files(
         coverage=cov,
         diff_coverage=diff_cov,
         max_files=max_files,
+        skip_covered_files_in_report=False,
     )
     assert [str(e.path) for e in files] == expected_files
     assert total == expected_total
-    assert all(str(e.path) in expected_total_files for e in total_files)
+
+    files, total = template.select_changed_files(
+        coverage=cov,
+        diff_coverage=diff_cov,
+        max_files=max_files,
+        skip_covered_files_in_report=True,
+    )
+    assert [str(e.path) for e in files] == covered_skipped_expected_files
+    assert total == covered_skipped_expected_total
 
 
 @pytest.mark.parametrize(
-    'current_code_and_diff, max_files, expected_files, expected_total',
+    'current_code_and_diff, max_files, expected_files, expected_total, covered_skipped_expected_files, covered_skipped_expected_total',
     [
         pytest.param(
             """
@@ -391,6 +413,8 @@ def test_select_changed_files(
             2,
             ['a.py'],
             1,
+            [],
+            0,
             id='unmodified',
         ),
         pytest.param(
@@ -402,6 +426,8 @@ def test_select_changed_files(
             2,
             ['a.py'],
             1,
+            [],
+            0,
             id='info_did_not_change',
         ),
         pytest.param(
@@ -412,6 +438,8 @@ def test_select_changed_files(
             2,
             ['a.py'],
             1,
+            ['a.py'],
+            1,
             id='info_did_change',
         ),
         pytest.param(
@@ -420,6 +448,8 @@ def test_select_changed_files(
             + 1 line covered
             """,
             2,
+            ['a.py'],
+            1,
             [],
             0,
             id='with_diff',
@@ -431,6 +461,8 @@ def test_select_changed_files(
             # file: a.py
             + 1 line covered
             """,
+            2,
+            ['a.py', 'b.py'],
             2,
             [],
             0,
@@ -447,6 +479,8 @@ def test_select_changed_files(
             """,
             2,
             ['b.py', 'c.py'],
+            3,
+            ['b.py', 'c.py'],
             2,
             id='truncated_and_ordered',
         ),
@@ -463,7 +497,9 @@ def test_select_changed_files(
             """,
             2,
             ['a.py', 'b.py'],
-            2,
+            3,
+            [],
+            0,
             id='truncated_and_ordered_sort_order_advanced',
         ),
         pytest.param(
@@ -477,26 +513,29 @@ def test_select_changed_files(
             None,
             ['a.py', 'b.py'],
             2,
+            ['b.py'],
+            1,
             id='max_none',
         ),
     ],
 )
 def test_select_files(
-    make_coverage_and_diff,
+    make_coverage,
     current_code_and_diff,
     max_files,
     expected_files,
     expected_total,
+    covered_skipped_expected_files,
+    covered_skipped_expected_total,
 ):
-    cov, diff_cov = make_coverage_and_diff(current_code_and_diff)
-    _, _, changed_files_info = template.select_changed_files(coverage=cov, diff_coverage=diff_cov, max_files=max_files)
-    files, total = template.select_files(
-        coverage=cov,
-        changed_files_info=changed_files_info,
-        max_files=max_files,
-    )
+    cov = make_coverage(current_code_and_diff)
+    files, total = template.select_files(coverage=cov, max_files=max_files, skip_covered_files_in_report=False)
     assert [str(e.path) for e in files] == expected_files
     assert total == expected_total
+
+    files, total = template.select_files(coverage=cov, max_files=max_files, skip_covered_files_in_report=True)
+    assert [str(e.path) for e in files] == covered_skipped_expected_files
+    assert total == covered_skipped_expected_total
 
 
 def test_select_files_no_statements(make_coverage_and_diff):
@@ -504,14 +543,9 @@ def test_select_files_no_statements(make_coverage_and_diff):
         # file: a.py
         1 line covered
         """
-    cov, diff_cov = make_coverage_and_diff(code)
-    _, _, changed_files_info = template.select_changed_files(coverage=cov, diff_coverage=diff_cov, max_files=2)
+    cov, _ = make_coverage_and_diff(code)
     cov.files[pathlib.Path('a.py')].info.num_statements = 0
-    files, total = template.select_files(
-        coverage=cov,
-        changed_files_info=changed_files_info,
-        max_files=2,
-    )
+    files, total = template.select_files(coverage=cov, max_files=2, skip_covered_files_in_report=False)
     assert [str(e.path) for e in files] == []
     assert total == 0
 

@@ -71,15 +71,16 @@ class Main:
 
         log.info('Generating comment for PR #%s', self.github.pr_number)
         marker = template.get_marker(marker_id=self.config.SUBPROJECT_ID)
-        files_info, count_files, changed_files_info = template.select_changed_files(
+        files_info, count_files = template.select_changed_files(
             coverage=self.coverage,
             diff_coverage=self.diff_coverage,
             max_files=self.config.MAX_FILES_IN_COMMENT,
+            skip_covered_files_in_report=self.config.SKIP_COVERED_FILES_IN_REPORT,
         )
         coverage_files_info, count_coverage_files = template.select_files(
             coverage=self.coverage,
-            changed_files_info=changed_files_info,
             max_files=self.config.MAX_FILES_IN_COMMENT - count_files,  # Truncate the report to MAX_FILES_IN_COMMENT
+            skip_covered_files_in_report=self.config.SKIP_COVERED_FILES_IN_REPORT,
         )
         try:
             comment = template.get_comment_markdown(
