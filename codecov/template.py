@@ -131,11 +131,11 @@ def get_comment_markdown(  # pylint: disable=too-many-arguments,too-many-locals
             coverage_report_url=coverage_report_url,
         )
     except jinja2.exceptions.TemplateError as exc:
-        log.error('Error rendering template: %s', exc)
+        log.error('Template rendering error: %s', str(exc))
         raise TemplateException from exc
 
     if marker not in comment:
-        log.error('Marker not found in the comment template')
+        log.error('Marker is not found in the comment template.')
         raise MissingMarker
 
     return comment

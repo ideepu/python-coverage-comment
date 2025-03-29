@@ -19,20 +19,6 @@ class BaseCoverageDemo(BaseCoverage):
         return Coverage(meta=None, info=None, files={})
 
 
-def test_diff_violations(make_coverage_and_diff):
-    _, diff = make_coverage_and_diff(
-        """
-        # file: a.py
-        + 1 line missing
-        2 line missing
-        + 3 line missing
-        4 line covered
-        + 5 line covered
-        """
-    )
-    assert diff.files[pathlib.Path('a.py')].violation_lines == [1, 3]
-
-
 class TestBase:
     @pytest.mark.parametrize(
         'num_covered, num_total, expected_coverage',

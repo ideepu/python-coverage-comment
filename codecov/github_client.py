@@ -81,7 +81,9 @@ class GitHubClient:
             headers={'Authorization': f'token {self.token}'},
         )
         if not session:
-            log.error('GitHub client session could not be created. Invalid token configuration.')
+            log.error(
+                'Failed to create GitHub client session. This might be due to an internal configuration or code issue.'
+            )
             raise ConfigurationException
         return session
 

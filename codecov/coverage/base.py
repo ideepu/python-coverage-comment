@@ -64,12 +64,6 @@ class FileDiffCoverage:
     # the statements (so it includes comments, blank lines, etc.)
     added_lines: list[int]
 
-    # TODO: Remove this property and use `missing_statements` instead
-    # for backward compatibility
-    @property
-    def violation_lines(self) -> list[int]:
-        return self.missing_statements
-
 
 @dataclasses.dataclass
 class DiffCoverage:
@@ -91,7 +85,7 @@ class BaseCoverage(ABC):
             with coverage_path.open() as coverage_data:
                 json_coverage = json.loads(coverage_data.read())
         except FileNotFoundError as exc:
-            log.error('Coverage report file not found: %s', coverage_path)
+            log.error('Coverage report file not found at the specified location: %s', coverage_path)
             raise ConfigurationException from exc
         except json.JSONDecodeError as exc:
             log.error('Invalid JSON format in coverage report file: %s', coverage_path)
