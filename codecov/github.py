@@ -53,10 +53,12 @@ class Github:
                 login=response.login,
             )
         except Unauthorized as exc:
-            log.error('Unauthorized access to user details. Invalid token.')
+            log.error('Authentication failed. The provided token is invalid. Please verify the token.')
             raise CannotGetUser from exc
         except Forbidden as exc:
-            log.error('Cannot get user details.')
+            log.error(
+                'Insufficient permissions. Unable to retrieve user details with the provided token. Please verify the token permissions and try again.',
+            )
             raise CannotGetUser from exc
 
     def _init_pr_number(self, pr_number: int | None = None, ref: str | None = None) -> tuple[int, str]:
@@ -70,10 +72,18 @@ class Github:
 
                 return pull_request.number, pull_request.head.ref
             except Forbidden as exc:
-                log.error('Forbidden access to pull request #%d.', pr_number)
+                log.error(
+                    'Forbidden access to pull request #%d. Insufficient permissions to retrieve details. Please verify the token permissions and try again.',
+                    pr_number,
+                )
+
                 raise CannotGetPullRequest from exc
             except NotFound as exc:
-                log.error('Pull request #%d does not exist or not in open state.', pr_number)
+                log.error(
+                    'Pull request #%d could not be found or is not in an open state. Please verify the pull request status.',
+                    pr_number,
+                )
+
                 raise CannotGetPullRequest from exc
 
         # If we're not on a PR, we need to find the PR number from the branch name
@@ -84,16 +94,26 @@ class Github:
                 for pull_request in pull_requests:
                     if pull_request.head.ref == ref:
                         return pull_request.number, pull_request.head.ref
-                log.debug('No open pull request found for branch %s.', ref)
+                log.debug(
+                    'No open pull request found for branch %s. Please ensure the branch has an active pull request.',
+                    ref,
+                )
+
                 raise NotFound
             except Forbidden as exc:
-                log.error('Forbidden access to pull requests for branch %s.', ref)
+                log.error(
+                    'Forbidden access to pull requests created for branch %s. Insufficient permissions to view pull request details.',
+                    ref,
+                )
                 raise CannotGetPullRequest from exc
             except NotFound as exc:
-                log.error('Checked the recent updated 100 PRs, No open pull request found for branch %s.', ref)
+                log.error(
+                    'Checked the 100 most recent PRs in the repository, but no open pull request found for branch %s.',
+                    ref,
+                )
                 raise CannotGetPullRequest from exc
 
-        log.error('No pull request number or branch reference provided.')
+        log.error('Pull request number or branch reference missing.')
         raise CannotGetPullRequest
 
     def _init_pr_diff(self) -> str:
@@ -105,10 +125,16 @@ class Github:
                 .get(use_text=True, headers={'Accept': 'application/vnd.github.v3.diff'})
             )
         except Forbidden as exc:
-            log.error('Forbidden access to pull request #%d diff.', self.pr_number)
+            log.error(
+                'Insufficient permissions to retrieve the diff of pull request #%d. Please verify the token permissions and try again.',
+                self.pr_number,
+            )
             raise CannotGetPullRequest from exc
         except NotFound as exc:
-            log.error('Pull request #%d does not exist or not in open state.', self.pr_number)
+            log.error(
+                'Pull request #%d does not exist or is not in an open state. Please ensure the branch has an active pull request.',
+                self.pr_number,
+            )
             raise CannotGetPullRequest from exc
 
         return pull_request_diff
@@ -116,7 +142,9 @@ class Github:
     def post_comment(self, contents: str, marker: str) -> None:
         log.info('Posting comment on pull request #%d.', self.pr_number)
         if len(contents) > 65536:
-            log.error('Comment exceeds allowed size(65536)')
+            log.error(
+                'Comment exceeds the 65536 character limit (GitHub limitation). Reduce the number of files to be reported in the comment using "MAX_FILES_IN_COMMENT" and try again.'
+            )
             raise CannotPostComment
 
         # Pull request review comments are comments made on a portion of the unified diff during a pull request review.
@@ -130,17 +158,26 @@ class Github:
                     comments_path(comment.id).patch(body=contents)
                     return
                 except Forbidden as exc:
-                    log.error('Forbidden access to update comment.')
+                    log.error(
+                        'Insufficient permissions to update the comment on pull request #%d. Please verify the token permissions and try again.'
+                    )
                     raise CannotPostComment from exc
                 except ApiError as exc:
-                    log.error('Unknown Api error while updating comment.')
+                    log.error(
+                        'Error occurred while updating the comment on pull request #%d. Details: %s',
+                        self.pr_number,
+                        str(exc),
+                    )
                     raise CannotPostComment from exc
 
         log.info('Adding new comment on pull request')
         try:
             issue_comments_path.post(body=contents)
         except Forbidden as exc:
-            log.error('Forbidden access to post comment.')
+            log.error(
+                'Insufficient permissions to post a comment on pull request #%d. Please check the token permissions and try again.',
+                self.pr_number,
+            )
             raise CannotPostComment from exc
 
     def write_annotations_to_branch(self, annotations: list[Annotation]) -> None:
@@ -155,10 +192,16 @@ class Github:
                 log.debug('Branch "%s/%s" is protected.', self.repository, self.annotations_data_branch)
                 raise NotFound
         except Forbidden as exc:
-            log.error('Forbidden access to branch "%s/%s".', self.repository, self.annotations_data_branch)
+            log.error(
+                'Insufficient permissions to write annotations to the branch "%s/%s". Please verify the token permissions and ensure it has content read and write access.',
+                self.repository,
+                self.annotations_data_branch,
+            )
             raise CannotGetBranch from exc
         except NotFound as exc:
-            log.error('Branch "%s/%s" does not exist.', self.repository, self.annotations_data_branch)
+            log.error(
+                'Branch "%s/%s" either does not exist or is protected.', self.repository, self.annotations_data_branch
+            )
             raise CannotGetBranch from exc
 
         log.info('Writing annotations to branch.')
@@ -175,7 +218,11 @@ class Github:
                 self.annotations_data_branch,
             )
         except Forbidden as exc:
-            log.error('Forbidden access to branch "%s/%s".', self.repository, self.annotations_data_branch)
+            log.error(
+                'Insufficient permissions to write annotations to the branch "%s/%s". Please verify the token permissions and ensure it has content read and write access.',
+                self.repository,
+                self.annotations_data_branch,
+            )
             raise CannotGetBranch from exc
 
         try:
@@ -192,14 +239,29 @@ class Github:
                 content=encoded_content,
             )
         except NotFound as exc:
-            log.error('Branch "%s/%s" does not exist.', self.repository, self.annotations_data_branch)
+            log.error(
+                'Branch "%s/%s" either does not exist or is protected.', self.repository, self.annotations_data_branch
+            )
             raise CannotGetBranch from exc
         except Forbidden as exc:
-            log.error('Forbidden access to branch "%s/%s".', self.repository, self.annotations_data_branch)
+            log.error(
+                'Insufficient permissions to write annotations to the branch "%s/%s". Please verify the token permissions and ensure it has content read and write access.',
+                self.repository,
+                self.annotations_data_branch,
+            )
             raise CannotGetBranch from exc
         except Conflict as exc:
-            log.error('Conflict writing to branch "%s/%s".', self.repository, self.annotations_data_branch)
+            log.error(
+                'Conflict while adding #%s pull request annotation to branch "%s/%s".',
+                self.pr_number,
+                self.repository,
+                self.annotations_data_branch,
+            )
             raise CannotGetBranch from exc
         except ValidationFailed as exc:
-            log.error('Validation failed on committer name or email.')
+            log.error(
+                'Validation failed for committer name or email, or the endpoint was spammed while writing annotation to branch "%s/%s".',
+                self.repository,
+                self.annotations_data_branch,
+            )
             raise CannotGetBranch from exc

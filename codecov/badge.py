@@ -27,7 +27,7 @@ def get_badge_color(
 
 def get_static_badge_url(label: str, message: str, color: str) -> str:
     if not color or not message:
-        log.error('color and message are required')
+        log.error('Both "color" and "message" are required to generate the badge URL.')
         raise ValueError
     code = '-'.join(e.replace('_', '__').replace('-', '--') for e in (label, message, color) if e)
     return 'https://img.shields.io/badge/' + urllib.parse.quote(f'{code}.svg')

@@ -105,6 +105,10 @@ class Config:
         return int(value)
 
     @classmethod
+    def clean_max_files_in_comment(cls, value: str) -> int:
+        return int(value)
+
+    @classmethod
     def clean_coverage_path(cls, value: str) -> pathlib.Path:
         return path_below(value)
 

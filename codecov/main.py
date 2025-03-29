@@ -30,7 +30,9 @@ class Main:
 
     def _init_required(self):
         if self.config.SKIP_COVERAGE and not self.config.ANNOTATE_MISSING_LINES:
-            log.error('Nothing to do since both SKIP_COVERAGE and ANNOTATE_MISSING_LINES are set to False. Exiting.')
+            log.error(
+                'No action taken as both SKIP_COVERAGE and ANNOTATE_MISSING_LINES are set to False. No comments or annotations will be generated.'
+            )
             raise CoreProcessingException
 
     def _init_github(self):
@@ -54,7 +56,7 @@ class Main:
         try:
             coverage = self.coverage_module.get_coverage_info(coverage_path=self.config.COVERAGE_PATH)
         except ConfigurationException as e:
-            log.error('Error processing coverage data.')
+            log.error('Error parsing the coverage file. Please check the file and try again.')
             raise CoreProcessingException from e
 
         if self.config.BRANCH_COVERAGE:
@@ -105,15 +107,14 @@ class Main:
             )
         except MissingMarker as e:
             log.error(
-                '``{{ %s }}`` marker not found. The marker is necessary for this action to recognize '
-                "its own comment and avoid making new comments or overwriting someone else's comment.",
+                'Marker "%s" not found. This marker is required to identify the comment and prevent creating or overwriting comments.',
                 marker,
             )
             raise CoreProcessingException from e
         except TemplateException as e:
             log.error(
-                'There was a rendering error when computing the text of the comment to post '
-                'on the PR. Please see the traceback for more information.'
+                'Rendering error occurred while generating the comment text for the PR. See the traceback for more details. Error: %s',
+                str(e),
             )
             raise CoreProcessingException from e
 
