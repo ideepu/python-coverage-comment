@@ -538,12 +538,12 @@ def test_select_files(
     assert total == covered_skipped_expected_total
 
 
-def test_select_files_no_statements(make_coverage_and_diff):
+def test_select_files_no_statements(make_coverage):
     code = """
         # file: a.py
         1 line covered
         """
-    cov, _ = make_coverage_and_diff(code)
+    cov = make_coverage(code)
     cov.files[pathlib.Path('a.py')].info.num_statements = 0
     files, total = template.select_files(coverage=cov, max_files=2, skip_covered_files_in_report=False)
     assert [str(e.path) for e in files] == []
