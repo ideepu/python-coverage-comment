@@ -34,7 +34,7 @@
 {%- set text = "The coverage rate of " ~ path ~ " is " ~ percent_covered_display ~ "% (" ~ covered_statements_count ~ "/" ~ statements_count ~ ")." -%}
 {%- set label = percent_covered_display ~ "%" -%}
 {%- set message = "(" ~ covered_statements_count ~ "/" ~ statements_count ~ ")" -%}
-{%- set color = percent_covered | get_badge_color -%}
+{%- set color = percent_covered | x100 | get_badge_color -%}
 <td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ label | generate_badge(message=message, color=color) }}"></a></td>
 {%- endmacro -%}
 

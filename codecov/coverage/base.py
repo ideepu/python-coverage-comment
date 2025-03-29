@@ -101,7 +101,7 @@ class BaseCoverage(ABC):
 
     @abstractmethod
     def extract_info(self, data: dict) -> Coverage:
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def get_diff_coverage_info(  # pylint: disable=too-many-locals
         self,

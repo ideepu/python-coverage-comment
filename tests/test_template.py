@@ -236,7 +236,7 @@ def test_template_no_files(coverage_obj):
         marker='<!-- foo -->',
         subproject_id='foo',
     )
-    assert '_This PR does not seem to contain any modification to coverable code.' in result
+    assert '_This PR does not include changes to coverable code or code with missing coverage.' in result
     assert 'code.py' not in result
     assert 'other.py' not in result
 

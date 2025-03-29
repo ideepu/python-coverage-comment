@@ -5,7 +5,7 @@
 {%- block coverage_evolution_badge -%}
 {%- if coverage %}
 {%- set text = "Coverage of the whole project for this PR is " ~ coverage.info.percent_covered_display ~ "%." -%}
-{%- set color = coverage.info.percent_covered | get_badge_color -%}
+{%- set color = coverage.info.percent_covered | x100 | get_badge_color -%}
 <img title="{{ text }}" src="{{ 'Coverage' | generate_badge(message=coverage.info.percent_covered_display ~ '%', color=color) }}">
 {%- endif -%}
 {%- endblock coverage_evolution_badge -%}
