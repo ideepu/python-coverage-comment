@@ -4,17 +4,18 @@ from codecov.exceptions import (
     ApiError,
     CannotGetBranch,
     CannotGetPullRequest,
+    CannotGetUser,
     CannotPostComment,
     Conflict,
     Forbidden,
     NotFound,
+    Unauthorized,
     ValidationFailed,
 )
 from codecov.github_client import GitHubClient
 from codecov.groups import Annotation
 from codecov.log import log
 
-GITHUB_CODECOV_LOGIN = 'CI-codecov[bot]'
 COMMIT_MESSAGE = 'Update annotations data'
 
 
@@ -41,7 +42,6 @@ class Github:
         self.user: User = self._init_user()
         self.pr_number, self.base_ref = self._init_pr_number(pr_number=pr_number, ref=ref)
         self.pr_diff: str = self._init_pr_diff()
-        # TODO: Validate the user and email if annotations are not empty. We need these for committing to the branch
 
     def _init_user(self) -> User:
         log.info('Getting user details.')
@@ -52,13 +52,12 @@ class Github:
                 email=response.email or f'{response.id}+{response.login}@users.noreply.github.com',
                 login=response.login,
             )
-        except Forbidden:
-            # The GitHub actions user cannot access its own details
-            # and I'm not sure there's a way to see that we're using
-            # the GitHub actions user except noting that it fails
-            log.warning('Cannot get user details. Using default user.')
-            # TODO: Abort if we can't get the user details
-        return User(name=GITHUB_CODECOV_LOGIN, email='', login=GITHUB_CODECOV_LOGIN)
+        except Unauthorized as exc:
+            log.error('Unauthorized access to user details. Invalid token.')
+            raise CannotGetUser from exc
+        except Forbidden as exc:
+            log.error('Cannot get user details.')
+            raise CannotGetUser from exc
 
     def _init_pr_number(self, pr_number: int | None = None, ref: str | None = None) -> tuple[int, str]:
         if pr_number:

@@ -4,7 +4,15 @@ from typing import Any
 
 import httpx
 
-from codecov.exceptions import ApiError, ConfigurationException, Conflict, Forbidden, NotFound, ValidationFailed
+from codecov.exceptions import (
+    ApiError,
+    ConfigurationException,
+    Conflict,
+    Forbidden,
+    NotFound,
+    Unauthorized,
+    ValidationFailed,
+)
 from codecov.log import log
 
 TIMEOUT = 60
@@ -110,6 +118,8 @@ class GitHubClient:
         except httpx.HTTPStatusError as exc:
             exc_cls = ApiError
             match exc.response.status_code:
+                case 401:
+                    exc_cls = Unauthorized
                 case 403:
                     exc_cls = Forbidden
                 case 404:

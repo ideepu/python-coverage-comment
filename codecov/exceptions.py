@@ -14,6 +14,10 @@ class GithubBaseException(CoreBaseException):
     pass
 
 
+class CannotGetUser(GithubBaseException):
+    pass
+
+
 class CannotGetBranch(GithubBaseException):
     pass
 
@@ -31,6 +35,10 @@ class ApiError(GithubBaseException):
 
 
 class NotFound(ApiError):
+    pass
+
+
+class Unauthorized(ApiError):
     pass
 
 
