@@ -29,6 +29,32 @@ GITHUB_PR_NUMBER=<pull_request_number> \
 codecov
 ```
 
+## Required Environment Variables
+
+- `GITHUB_REPOSITORY`: The name of the GitHub repository where the action is running.
+- `COVERAGE_PATH`: The path to the coverage report file. (JSON format)
+- `GITHUB_TOKEN`: The GitHub token used for authentication.
+- `GITHUB_PR_NUMBER`: The number of the pull request where the action is running. (Optional)
+- `GITHUB_REF`: The branch to run the action on. If not provided, it will be used to get the PR number. (Optional)
+
+Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` takes precedence if both mentioned.
+
+## Optional Environment Variables
+
+- `SUBPROJECT_ID`: The ID or URL of the subproject or report.
+- `MINIMUM_GREEN`: The minimum coverage percentage for green status. Default is 100.
+- `MINIMUM_ORANGE`: The minimum coverage percentage for orange status. Default is 70.
+- `BRANCH_COVERAGE`: Show branch coverage in the report. Default is False.
+- `SKIP_COVERAGE`: Skip coverage reporting as github comment and generate only annotaions. Default is False.
+- `ANNOTATIONS_DATA_BRANCH`: The branch to store the annotations. Read more about this [here](./docs/annotations.md).
+- `ANNOTATIONS_OUTPUT_PATH`: The path where the annotaions should be stored. Should be a path to folder.
+- `ANNOTATE_MISSING_LINES`: Whether to annotate missing lines in the coverage report. Default is False.
+- `ANNOTATION_TYPE`: The type of annotation to use for missing lines. 'notice' or 'warning' or 'error'. Default is 'warning'.
+- `MAX_FILES_IN_COMMENT`: The maximum number of files to include in the coverage report comment. Default is 25.
+- `COMPLETE_PROJECT_REPORT`: Whether to include the complete project coverage report in the comment. Default is False.
+- `COVERAGE_REPORT_URL`: URL of the full coverage report to mention in the comment.
+- `DEBUG`: Whether to enable debug mode. Default is False.
+
 ## Setting up Local Environment using Pipenv
 
 To get started, follow these steps:
@@ -71,79 +97,6 @@ To get started, follow these steps:
     ```bash
     make run
     ```
-
-## Required Environment Variables
-
-- `GITHUB_REPOSITORY`: The name of the GitHub repository where the action is running.
-- `COVERAGE_PATH`: The path to the coverage report file. (JSON format)
-- `GITHUB_TOKEN`: The GitHub token used for authentication.
-- `GITHUB_PR_NUMBER`: The number of the pull request where the action is running. (Optional)
-- `GITHUB_REF`: The branch to run the action on. If not provided, it will be used to get the PR number. (Optional)
-
-Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` takes precedence if both mentioned.
-
-## Optional Environment Variables
-
-- `SUBPROJECT_ID`: The ID or URL of the subproject or report.
-- `MINIMUM_GREEN`: The minimum coverage percentage for green status. Default is 100.
-- `MINIMUM_ORANGE`: The minimum coverage percentage for orange status. Default is 70.
-- `BRANCH_COVERAGE`: Show branch coverage in the report. Default is False.
-- `SKIP_COVERAGE`: Skip coverage reporting as github comment and generate only annotaions. Default is False.
-- `ANNOTATIONS_DATA_BRANCH`: The branch to store the annotations. Read more about this [here](./docs/annotations.md).
-- `ANNOTATIONS_OUTPUT_PATH`: The path where the annotaions should be stored. Should be a path to folder.
-- `ANNOTATE_MISSING_LINES`: Whether to annotate missing lines in the coverage report. Default is False.
-- `ANNOTATION_TYPE`: The type of annotation to use for missing lines. 'notice' or 'warning' or 'error'. Default is 'warning'.
-- `MAX_FILES_IN_COMMENT`: The maximum number of files to include in the coverage report comment. Default is 25.
-- `COMPLETE_PROJECT_REPORT`: Whether to include the complete project coverage report in the comment. Default is False.
-- `COVERAGE_REPORT_URL`: URL of the full coverage report to mention in the comment.
-- `DEBUG`: Whether to enable debug mode. Default is False.
-
-That's it! You have successfully cloned the repository and built the project.
-
-## Custom Installation
-
-1. Install Python: Make sure you have Python installed on your system.
-You can download and install Python from the official Python website.
-
-2. Install Pipenv: Pipenv is a package manager that combines pip and virtualenv.
-You can install Pipenv using pip, the Python package installer.
-Open your terminal or command prompt and run the following command:
-
-    ```bash
-    pip install pipenv
-    ```
-
-3. Install project dependencies:
-To install the project dependencies specified in the Pipfile, run the following command:
-
-    ```bash
-    pipenv install --dev
-    ```
-
-4. Activate the virtual environment:
-To activate the virtual environment created by Pipenv, run the following command:
-
-    ```bash
-    pipenv shell
-    ```
-
-5. Run your project:
-You can now run your project using the activated virtual environment.
-For example, if your project has a run.py file, you can run it using the following command:
-
-    ```bash
-    python run.py
-    ```
-
-6. Install pre-commit hooks: To set up pre-commit hooks for your project, run the following command:
-
-    ```bash
-    pipenv run pre-commit install
-    ```
-
-    This will install and configure pre-commit hooks that will run before each commit to enforce code quality and style standards.
-
-That's it! You have successfully set up your local environment using Pipenv.
 
 ---
 > **NOTE:**
