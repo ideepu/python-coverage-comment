@@ -166,7 +166,7 @@ class TestMain:
             with patch.object(Main, '_init_github', return_value=gh):
                 main = Main()
                 main.config.ANNOTATE_MISSING_LINES = True
-                main.config.ANNOTATIONS_OUTPUT_PATH = pathlib.Path(tempfile.mkstemp(suffix='.json')[1])
+                main.config.ANNOTATIONS_OUTPUT_PATH = pathlib.Path(tempfile.mkdtemp())
                 main.coverage = coverage_obj
                 main.diff_coverage = diff_coverage_obj
                 assert main._generate_annotations() is None
@@ -178,7 +178,7 @@ class TestMain:
                 main = Main()
                 main.config.BRANCH_COVERAGE = True
                 main.config.ANNOTATE_MISSING_LINES = True
-                main.config.ANNOTATIONS_OUTPUT_PATH = pathlib.Path(tempfile.mkstemp(suffix='.json')[1])
+                main.config.ANNOTATIONS_OUTPUT_PATH = pathlib.Path(tempfile.mkdtemp())
                 main.coverage = coverage_obj
                 main.diff_coverage = diff_coverage_obj
                 assert main._generate_annotations() is None

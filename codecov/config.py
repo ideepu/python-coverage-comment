@@ -105,7 +105,10 @@ class Config:
 
     @classmethod
     def clean_annotations_output_path(cls, value: str) -> pathlib.Path:
-        return pathlib.Path(value)
+        path = pathlib.Path(value)
+        if path.exists() or path.is_dir():
+            return path
+        raise ValueError
 
     # We need to type environ as a MutableMapping because that's what
     # os.environ is, and `dict[str, str]` is not enough
