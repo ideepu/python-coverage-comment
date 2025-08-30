@@ -60,8 +60,7 @@ class FileInfo:
     diff: FileDiffCoverage | None
 
 
-def get_comment_markdown(  # pylint: disable=too-many-arguments,too-many-locals
-    *,
+def get_comment_markdown(  # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
     coverage: Coverage,
     diff_coverage: DiffCoverage,
     files: list[FileInfo],

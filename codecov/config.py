@@ -11,12 +11,16 @@ from typing import Any, Callable
 from codecov.exceptions import MissingEnvironmentVariable
 
 
-def path_below(path_str: str | pathlib.Path) -> pathlib.Path:
+def _is_json_file(path: pathlib.Path) -> bool:
+    return path.suffix == '.json'
+
+
+def resolve_path(path_str: str | pathlib.Path) -> pathlib.Path:
     path = pathlib.Path(path_str).resolve()
     if not (path.exists() and path.is_file()):
         raise ValueError('Path does not exist')
 
-    if path.suffix != '.json':
+    if not _is_json_file(path):
         raise ValueError('The file is not a JSON file.')
     return path
 
@@ -40,7 +44,7 @@ class Config:
     COVERAGE_PATH: pathlib.Path
     GITHUB_TOKEN: str = dataclasses.field(repr=False)
     GITHUB_PR_NUMBER: int | None = None
-    # Branch to run the action on (alternate to get PR number if not provided)
+    # Branch to create the comment on (alternate to get PR number if not provided)
     # Example Organisation:branch-name (Company:sample-branch) or User:branch-name (user:sample-branch)
     GITHUB_REF: str | None = None
     SUBPROJECT_ID: str | None = None
@@ -56,7 +60,6 @@ class Config:
     SKIP_COVERED_FILES_IN_REPORT: bool = True
     COMPLETE_PROJECT_REPORT: bool = False
     COVERAGE_REPORT_URL: str | None = None
-    # Only for debugging, not exposed in the action
     DEBUG: bool = False
 
     def __post_init__(self) -> None:
@@ -110,7 +113,7 @@ class Config:
 
     @classmethod
     def clean_coverage_path(cls, value: str) -> pathlib.Path:
-        return path_below(value)
+        return resolve_path(value)
 
     @classmethod
     def clean_annotations_output_path(cls, value: str) -> pathlib.Path:
@@ -125,13 +128,15 @@ class Config:
     def from_environ(cls, environ: MutableMapping[str, str]) -> Config:
         possible_variables = list(inspect.signature(cls).parameters)
         config_dict: dict[str, Any] = {k: v for k, v in environ.items() if k in possible_variables}
-        for key, value in list(config_dict.items()):
-            if hasattr(cls, f'clean_{key.lower()}'):
-                func: Callable = getattr(cls, f'clean_{key.lower()}')
-                try:
-                    config_dict[key] = func(value)
-                except ValueError as exc:
-                    raise ValueError(f'{key}: {exc!s}') from exc
+        for key, value in config_dict.items():
+            if not hasattr(cls, f'clean_{key.lower()}'):
+                continue
+
+            func: Callable = getattr(cls, f'clean_{key.lower()}')
+            try:
+                config_dict[key] = func(value)
+            except ValueError as exc:
+                raise ValueError(f'{key}: {exc!s}') from exc
 
         try:
             config_obj = cls(**config_dict)

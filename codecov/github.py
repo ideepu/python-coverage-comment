@@ -61,57 +61,63 @@ class Github:
             )
             raise CannotGetUser from exc
 
+    def _get_pr_details_from_pr_number(self, pr_number: int) -> tuple[int, str]:
+        log.info('Getting pull request #%d.', pr_number)
+        try:
+            pull_request = self.client.repos(self.repository).pulls(pr_number).get()
+            if pull_request.state != 'open':
+                log.debug('Pull request #%d is not in open state.', pr_number)
+                raise NotFound
+
+            return pull_request.number, pull_request.head.ref
+        except Forbidden as exc:
+            log.error(
+                'Forbidden access to pull request #%d. Insufficient permissions to retrieve details. Please verify the token permissions and try again.',
+                pr_number,
+            )
+
+            raise CannotGetPullRequest from exc
+        except NotFound as exc:
+            log.error(
+                'Pull request #%d could not be found or is not in an open state. Please verify the pull request status.',
+                pr_number,
+            )
+
+            raise CannotGetPullRequest from exc
+
+    def _get_pr_details_from_ref(self, ref: str) -> tuple[int, str]:
+        log.info('Getting pull request for branch %s.', ref)
+        try:
+            pull_requests = self.client.repos(self.repository).pulls.get(state='open', per_page=100)
+            for pull_request in pull_requests:
+                if pull_request.head.ref == ref:
+                    return pull_request.number, pull_request.head.ref
+            log.debug(
+                'No open pull request found for branch %s. Please ensure the branch has an active pull request.',
+                ref,
+            )
+
+            raise NotFound
+        except Forbidden as exc:
+            log.error(
+                'Forbidden access to pull requests created for branch %s. Insufficient permissions to view pull request details.',
+                ref,
+            )
+            raise CannotGetPullRequest from exc
+        except NotFound as exc:
+            log.error(
+                'Checked the 100 most recent PRs in the repository, but no open pull request found for branch %s.',
+                ref,
+            )
+            raise CannotGetPullRequest from exc
+
     def _init_pr_number(self, pr_number: int | None = None, ref: str | None = None) -> tuple[int, str]:
         if pr_number:
-            log.info('Getting pull request #%d.', pr_number)
-            try:
-                pull_request = self.client.repos(self.repository).pulls(pr_number).get()
-                if pull_request.state != 'open':
-                    log.debug('Pull request #%d is not in open state.', pr_number)
-                    raise NotFound
-
-                return pull_request.number, pull_request.head.ref
-            except Forbidden as exc:
-                log.error(
-                    'Forbidden access to pull request #%d. Insufficient permissions to retrieve details. Please verify the token permissions and try again.',
-                    pr_number,
-                )
-
-                raise CannotGetPullRequest from exc
-            except NotFound as exc:
-                log.error(
-                    'Pull request #%d could not be found or is not in an open state. Please verify the pull request status.',
-                    pr_number,
-                )
-
-                raise CannotGetPullRequest from exc
+            return self._get_pr_details_from_pr_number(pr_number)
 
         # If we're not on a PR, we need to find the PR number from the branch name
         if ref:
-            log.info('Getting pull request for branch %s.', ref)
-            try:
-                pull_requests = self.client.repos(self.repository).pulls.get(state='open', per_page=100)
-                for pull_request in pull_requests:
-                    if pull_request.head.ref == ref:
-                        return pull_request.number, pull_request.head.ref
-                log.debug(
-                    'No open pull request found for branch %s. Please ensure the branch has an active pull request.',
-                    ref,
-                )
-
-                raise NotFound
-            except Forbidden as exc:
-                log.error(
-                    'Forbidden access to pull requests created for branch %s. Insufficient permissions to view pull request details.',
-                    ref,
-                )
-                raise CannotGetPullRequest from exc
-            except NotFound as exc:
-                log.error(
-                    'Checked the 100 most recent PRs in the repository, but no open pull request found for branch %s.',
-                    ref,
-                )
-                raise CannotGetPullRequest from exc
+            return self._get_pr_details_from_ref(ref)
 
         log.error('Pull request number or branch reference missing.')
         raise CannotGetPullRequest

@@ -14,26 +14,26 @@ from codecov.exceptions import MissingEnvironmentVariable
 def test_path_below_existing_file():
     with tempfile.NamedTemporaryFile(suffix='.json') as temp_file:
         path = pathlib.Path(temp_file.name)
-        assert config.path_below(path) == path.resolve()
+        assert config.resolve_path(path) == path.resolve()
 
 
 def test_path_below_nonexistent_file():
     path = pathlib.Path('/path/to/nonexistent_file.json')
     with pytest.raises(ValueError):
-        config.path_below(path)
+        config.resolve_path(path)
 
 
 def test_path_below_directory():
     path = pathlib.Path('/path/to/directory')
     with pytest.raises(ValueError):
-        config.path_below(path)
+        config.resolve_path(path)
 
 
 def test_path_below_non_json_file():
     with tempfile.NamedTemporaryFile(suffix='.txt') as temp_file:
         path = pathlib.Path(temp_file.name)
         with pytest.raises(ValueError):
-            config.path_below(path)
+            config.resolve_path(path)
 
 
 def test_config_from_environ_missing():
