@@ -364,7 +364,7 @@ def session():
                             match = False
                             break
                     else:
-                        if not match_value == request_value:
+                        if match_value != request_value:
                             match = False
                             break
                 if match:

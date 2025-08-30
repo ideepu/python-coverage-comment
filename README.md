@@ -1,5 +1,7 @@
 # python-coverage-comment
 
+## WIP 🚧
+
 Create a Coverage report comment on Github PR
 
 Permissions needed for the Github Token:
@@ -8,7 +10,7 @@ Permissions needed for the Github Token:
 `Pull requests:write`
 
 If you have given `ANNOTATIONS_DATA_BRANCH` branch then Github Token also requires content write permissions.
-Read more on how to use this [here](./docs/annotations.md).
+Read more on how to use this [document](./docs/annotations.md).
 
 `Contents:read`
 `Contents:write`
@@ -46,7 +48,7 @@ Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` 
 - `MINIMUM_ORANGE`: The minimum coverage percentage for orange status. Default is 70.
 - `BRANCH_COVERAGE`: Show branch coverage in the report. Default is False.
 - `SKIP_COVERAGE`: Skip coverage reporting as github comment and generate only annotaions. Default is False.
-- `ANNOTATIONS_DATA_BRANCH`: The branch to store the annotations. Read more about this [here](./docs/annotations.md).
+- `ANNOTATIONS_DATA_BRANCH`: The branch to store the annotations. Read more about this [document](./docs/annotations.md).
 - `ANNOTATIONS_OUTPUT_PATH`: The path where the annotaions should be stored. Should be a path to folder.
 - `ANNOTATE_MISSING_LINES`: Whether to annotate missing lines in the coverage report. Default is False.
 - `ANNOTATION_TYPE`: The type of annotation to use for missing lines. 'notice' or 'warning' or 'error'. Default is 'warning'.
