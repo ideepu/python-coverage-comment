@@ -207,7 +207,7 @@ def test_comment_template_branch_coverage(coverage_obj, diff_coverage_obj):
     assert result.startswith('## Coverage report')
     assert '<!-- foo -->' in result
     assert '<th>Branches</th><th>Missing</th>' in result
-    assert 'Branches missing' in result
+    assert 'Missing branches' in result
     assert 'colspan="9"' in result
 
 
