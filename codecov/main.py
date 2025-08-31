@@ -6,7 +6,7 @@ from codecov.config import Config
 from codecov.coverage import PytestCoverage
 from codecov.coverage.base import Coverage, DiffCoverage
 from codecov.exceptions import ConfigurationException, CoreProcessingException, MissingMarker, TemplateException
-from codecov.github import Github
+from codecov.github import Github, GithubDiffParser
 from codecov.github_client import GitHubClient
 from codecov.log import log, setup as log_setup
 
@@ -61,7 +61,7 @@ class Main:
 
         if self.config.BRANCH_COVERAGE:
             coverage = diff_grouper.fill_branch_missing_groups(coverage=coverage)
-        added_lines = self.coverage_module.parse_diff_output(diff=self.github.pr_diff)
+        added_lines = GithubDiffParser(diff=self.github.pr_diff).parse()
         diff_coverage = self.coverage_module.get_diff_coverage_info(added_lines=added_lines, coverage=coverage)
         self.coverage = coverage
         self.diff_coverage = diff_coverage

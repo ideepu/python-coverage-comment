@@ -6,8 +6,6 @@ import decimal
 import json
 import pathlib
 from abc import ABC, abstractmethod
-from collections import deque
-from collections.abc import Sequence
 
 from codecov.exceptions import ConfigurationException
 from codecov.log import log
@@ -121,6 +119,7 @@ class BaseCoverage(ABC):
             missing = set(file.missing_lines) & set(added_lines_for_file)
             count_missing = len(missing)
 
+            # Added lines includes comments, blank lines, etc in the diff, So we take the actual statements in the file
             added = executed | missing
             count_total = len(added)
 
@@ -149,67 +148,3 @@ class BaseCoverage(ABC):
             num_changed_lines=num_changed_lines,
             files=files,
         )
-
-    def parse_diff_output(self, diff: str) -> dict[pathlib.Path, list[int]]:
-        current_file: pathlib.Path | None = None
-        added_filename_prefix = '+++ b/'
-        result: dict[pathlib.Path, list[int]] = {}
-        diff_lines: deque[str] = deque()
-        diff_lines.extend(diff.splitlines())
-        while diff_lines:
-            line = diff_lines.popleft()
-            if line.startswith(added_filename_prefix):
-                current_file = pathlib.Path(line.removeprefix(added_filename_prefix))
-                continue
-            if not line.startswith('@@'):
-                continue
-
-            def parse_line_number_diff_line(diff_line: str) -> Sequence[int]:
-                """
-                Parse the "added" part of the line number diff text:
-                    @@ -60,0 +61 @@ def compute_files(  -> [64]
-                    @@ -60,0 +61,9 @@ def compute_files(  -> [64, 65, 66]
-
-                Github API returns default context lines 3 at start and end, we need to remove them.
-                """
-                start, _ = (int(i) for i in (diff_line.split()[2][1:] + ',1').split(',')[:2])
-
-                line_start = line_end = start
-                while diff_lines:
-                    next_line = diff_lines.popleft()
-                    if next_line.startswith(' '):
-                        line_start += 1
-                        line_end += 1
-                        continue
-
-                    if next_line.startswith('-'):
-                        continue
-
-                    diff_lines.appendleft(next_line)
-                    break
-
-                last_added_line = line_end
-                while diff_lines:
-                    next_line = diff_lines.popleft()
-                    if next_line.startswith(' ') or next_line.startswith('+'):
-                        line_end += 1
-                        if next_line.startswith('+'):
-                            last_added_line = line_end
-                        continue
-
-                    if next_line.startswith('-'):
-                        continue
-
-                    diff_lines.appendleft(next_line)
-                    break
-
-                return range(line_start, last_added_line)
-
-            lines = parse_line_number_diff_line(diff_line=line)
-            if len(lines) > 0:
-                if current_file is None:
-                    log.error('Diff output format is invalid: %s', diff)
-                    raise ValueError
-                result.setdefault(current_file, []).extend(lines)
-
-        return result

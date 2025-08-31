@@ -1,4 +1,6 @@
 import dataclasses
+import pathlib
+from collections import defaultdict, deque
 
 from codecov.exceptions import (
     ApiError,
@@ -271,3 +273,70 @@ class Github:
                 self.annotations_data_branch,
             )
             raise CannotGetBranch from exc
+
+
+class GithubDiffParser:
+    def __init__(self, diff: str):
+        self.diff_lines: deque[str] = deque(diff.splitlines())
+        self.added_filename_prefix = '+++ b/'
+        self.result: dict[pathlib.Path, list[int]] = defaultdict(list)
+
+    def _get_hunk_start_and_length(self, diff_line: str) -> tuple[int, int]:
+        # The diff_line looks like: "@@ -60,0 +61,9 @@ ...", and we want to extract the starting line number of the added lines.
+        # diff_line.split()[2] gives "+61,9" (the added lines part).
+        # 61 is the starting line number of the added lines and 9 is the number of lines in the hunk (context lines + added lines).
+        # [1:] removes the '+' sign, so we get "61,9".
+        # Adding ',1' ensures that if there's no comma (e.g., "+61"), we still get a tuple ("61", "1").
+        # .split(',') splits into ["61", "9"], and [:2] ensures we only take the first two elements.
+        # The generator expression converts them to integers.
+        line_no, hunk_length = (int(i) for i in (diff_line.split()[2][1:] + ',1').split(',')[:2])
+        return line_no, hunk_length
+
+    def _parse_hunk_diff_lines(self, line_no: int, hunk_length: int) -> list[int]:
+        """
+        Parse the "added" part of the line number diff text:
+            @@ -60,0 +61 @@ def compute_files(  -> [64]
+            @@ -60,0 +61,9 @@ def compute_files(  -> [64, 65, 66]
+
+        Github API returns default context lines 3 at start and end, we need to remove them.
+        This also handles the case where there are no or less context lines than expected in the hunk.
+        This method gets only the added lines of the new file in the hunk, we ignore the modified lines in the original file.
+        """
+        added_lines: list[int] = []
+        hunk_lines = list(range(line_no, line_no + hunk_length))
+        while hunk_lines:
+            next_line = self.diff_lines.popleft()
+            # The lines without any changes start with a space. These could be context lines or unchanged lines.
+            # We ignore these and consider the actual changed line as the start of diff.
+            if next_line.startswith(' '):
+                hunk_lines.pop(0)
+                continue
+
+            # We ignore deleted lines because they are changed/removed lines in original file and consider the the added lines of the new file as the start of diff.
+            if next_line.startswith('-'):
+                continue
+
+            if next_line.startswith('+'):
+                added_lines.append(hunk_lines.pop(0))
+
+        return added_lines
+
+    def parse(self) -> dict[pathlib.Path, list[int]]:
+        current_file: pathlib.Path | None = None
+        while self.diff_lines:
+            line = self.diff_lines.popleft()
+            if line.startswith(self.added_filename_prefix):
+                current_file = pathlib.Path(line.removeprefix(self.added_filename_prefix))
+                continue
+            if not line.startswith('@@'):
+                continue
+
+            line_no, hunk_length = self._get_hunk_start_and_length(line)
+            lines = self._parse_hunk_diff_lines(line_no=line_no, hunk_length=hunk_length)
+            if len(lines) > 0:
+                if current_file is None:
+                    log.error('Diff output format is invalid: %s', self.diff_lines)
+                    raise ValueError
+                self.result[current_file].extend(lines)
+
+        return self.result
