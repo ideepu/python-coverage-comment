@@ -119,6 +119,7 @@ class BaseCoverage(ABC):
             missing = set(file.missing_lines) & set(added_lines_for_file)
             count_missing = len(missing)
 
+            # Added lines includes comments, blank lines, etc in the diff, So we take the actual statements in the file
             added = executed | missing
             count_total = len(added)
 
