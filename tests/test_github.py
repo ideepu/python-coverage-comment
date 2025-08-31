@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from codecov.exceptions import CannotGetBranch, CannotGetPullRequest, CannotGetUser, CannotPostComment
-from codecov.github import COMMIT_MESSAGE, Github, User
+from codecov.github import COMMIT_MESSAGE, Github, GithubDiffParser, User
 from codecov.groups import Annotation, AnnotationEncoder
 
 TEST_DATA_PR_DIFF = 'diff --git a/file.py b/file.py\nindex 1234567..abcdefg 100644\n--- a/file.py\n+++ b/file.py\n@@ -1,2 +1,2 @@\n-foo\n+bar\n-baz\n+qux\n'
@@ -664,3 +664,137 @@ class TestGitHub:
         gh_init_user_mock.assert_called_once()
         gh_init_pr_number_mock.assert_called_once()
         gh_init_pr_diff_mock.assert_called_once()
+
+
+class TestGithubDiffParser:
+    @pytest.mark.parametrize(
+        'line_number_diff_line, expected',
+        [
+            (
+                'diff --git a/example.txt b/example.txt\n'
+                'index abcdef1..2345678 100644\n'
+                '--- a/example.txt\n'
+                '+++ b/example.txt\n'
+                '@@ -1,1 +1,3 @@\n'
+                '-old_line_1\n'
+                '+new_line_1\n'
+                '+new_line_2\n'
+                '+new_line_3\n'
+                '@@ -10,3 +10,4 @@\n'
+                '+added_line\n'
+                '+added_line\n'
+                '+added_line\n'
+                '+added_line\n',
+                {
+                    pathlib.Path('example.txt'): [1, 2, 3, 10, 11, 12, 13],
+                },
+            ),
+            (
+                'diff --git a/sample.py b/sample.py\n'
+                'index 1234567..abcdef1 100644\n'
+                '--- a/sample.py\n'
+                '+++ b/sample.py\n'
+                '@@ -5,0 +5,2 @@\n'
+                '+added_line_1\n'
+                '+added_line_2\n'
+                '@@ -20,0 +20,6 @@\n'
+                '+new_function_call()\n'
+                '+new_function_call()\n'
+                '+new_function_call()\n'
+                '+new_function_call()\n'
+                '+new_function_call()\n'
+                '+new_function_call()\n',
+                {
+                    pathlib.Path('sample.py'): [5, 6, 20, 21, 22, 23, 24, 25],
+                },
+            ),
+            (
+                'diff --git a/test.txt b/test.txt\n'
+                'index 1111111..2222222 100644\n'
+                '--- a/test.txt\n'
+                '+++ b/test.txt\n'
+                '@@ -1,1 +1,1 @@\n'
+                '-old_content\n'
+                '+new_content\n',
+                {
+                    pathlib.Path('test.txt'): [1],
+                },
+            ),
+            (
+                'diff --git a/example.py b/example.py\n'
+                'index abcdef1..2345678 100644\n'
+                '--- a/example.py\n'
+                '+++ b/example.py\n'
+                '@@ -7,4 +7,4 @@ def process_data(data):\n'
+                '         if item > 0:\n'
+                '             result.append(item * 2)\n'
+                "-            logger.debug('Item processed: {}'.format(item))\n"
+                "+            logger.info('Item processed: {}'.format(item))\n"
+                '     return result\n',
+                {
+                    pathlib.Path('example.py'): [9],
+                },
+            ),
+            (
+                'diff --git a/sample.py b/sample.py\n'
+                'index 1234567..abcdef1 100644\n'
+                '--- a/sample.py\n'
+                '+++ b/sample.py\n'
+                '@@ -15,4 +15,5 @@ def main():\n'
+                "             print('Processing item:', item)\n"
+                '             result = process_item(item)\n'
+                '-            if result:\n'
+                "-                print('Result:', result)\n"
+                "+                logger.debug('Item processed successfully')\n"
+                '+            else:\n'
+                "+                print('Item processing failed')\n",
+                {
+                    pathlib.Path('sample.py'): [17, 18, 19],
+                },
+            ),
+            (
+                'diff --git a/test.py b/test.py\n'
+                'index 1111111..2222222 100644\n'
+                '--- a/test.py\n'
+                '+++ b/test.py\n'
+                '@@ -5,4 +5,4 @@ def calculate_sum(a, b):\n'
+                '     return a + b\n'
+                ' def test_calculate_sum():\n'
+                '+    assert calculate_sum(2, 3) == 5\n'
+                '-    assert calculate_sum(0, 0) == 0\n'
+                '     assert calculate_sum(-1, 1) == 0\n',
+                {
+                    pathlib.Path('test.py'): [7],
+                },
+            ),
+            (
+                'diff --git a/test.py b/test.py\n'
+                'index 1111111..2222222 100644\n'
+                '--- a/test.py\n'
+                '+++ b/test.py\n'
+                '@@ -5,3 +5,3 @@ def calculate_sum(a, b):\n'
+                '     return a + b\n'
+                ' def test_calculate_sum():\n'
+                '     assert calculate_sum(-1, 1) == 0\n',
+                {},
+            ),
+        ],
+    )
+    def test_parse_line_number_diff_line(self, line_number_diff_line, expected):
+        result = GithubDiffParser(diff=line_number_diff_line).parse()
+        assert result == expected
+
+    def test_parse_line_number_raise_value_error(self):
+        lines = (
+            'diff --git a/test.py b/test.py\n'
+            'index 1111111..2222222 100644\n'
+            '--- a/test.py\n'
+            '@@ -5,4 +5,4 @@ def calculate_sum(a, b):\n'
+            '     return a + b\n'
+            ' def test_calculate_sum():\n'
+            '+    assert calculate_sum(2, 3) == 5\n'
+            '-    assert calculate_sum(0, 0) == 0\n'
+            '     assert calculate_sum(-1, 1) == 0\n'
+        )
+        with pytest.raises(ValueError):
+            GithubDiffParser(diff=lines).parse()
