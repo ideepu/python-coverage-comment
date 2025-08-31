@@ -73,10 +73,24 @@ class DiffCoverage:
 
 
 class BaseCoverage(ABC):
-    def compute_coverage(self, num_covered: int, num_total: int) -> decimal.Decimal:
-        if num_total == 0:
+    def convert_to_decimal(self, value: float, precision: int = 2) -> decimal.Decimal:
+        return decimal.Decimal(str(float(value) / 100)).quantize(
+            exp=decimal.Decimal(10) ** -precision,
+            rounding=decimal.ROUND_DOWN,
+        )
+
+    def compute_coverage(
+        self,
+        num_covered: int,
+        num_total: int,
+        num_branches_covered: int = 0,
+        num_branches_total: int = 0,
+    ) -> decimal.Decimal:
+        numerator = decimal.Decimal(num_covered + num_branches_covered)
+        denominator = decimal.Decimal(num_total + num_branches_total)
+        if denominator == 0:
             return decimal.Decimal('1')
-        return decimal.Decimal(num_covered) / decimal.Decimal(num_total)
+        return numerator / denominator
 
     def get_coverage_info(self, coverage_path: pathlib.Path) -> Coverage:
         try:
@@ -99,10 +113,13 @@ class BaseCoverage(ABC):
         self,
         added_lines: dict[pathlib.Path, list[int]],
         coverage: Coverage,
+        branch_coverage: bool = False,
     ) -> DiffCoverage:
         files = {}
         total_num_lines = 0
         total_num_violations = 0
+        total_num_branches_covered = 0
+        total_num_branches = 0
         num_changed_lines = 0
 
         for path, added_lines_for_file in added_lines.items():
@@ -126,7 +143,17 @@ class BaseCoverage(ABC):
             total_num_lines += count_total
             total_num_violations += count_missing
 
-            percent_covered = self.compute_coverage(num_covered=count_executed, num_total=count_total)
+            if branch_coverage:
+                total_num_branches_covered += file.info.covered_branches or 0
+                total_num_branches += file.info.num_branches or 0
+                percent_covered = self.compute_coverage(
+                    num_covered=count_executed,
+                    num_total=count_total,
+                    num_branches_covered=file.info.covered_branches or 0,
+                    num_branches_total=file.info.num_branches or 0,
+                )
+            else:
+                percent_covered = self.compute_coverage(num_covered=count_executed, num_total=count_total)
 
             files[path] = FileDiffCoverage(
                 path=path,
@@ -136,10 +163,18 @@ class BaseCoverage(ABC):
                 added_statements=sorted(added),
                 added_lines=added_lines_for_file,
             )
-        final_percentage = self.compute_coverage(
-            num_covered=total_num_lines - total_num_violations,
-            num_total=total_num_lines,
-        )
+        if branch_coverage:
+            final_percentage = self.compute_coverage(
+                num_covered=total_num_lines - total_num_violations,
+                num_total=total_num_lines,
+                num_branches_covered=total_num_branches_covered,
+                num_branches_total=total_num_branches,
+            )
+        else:
+            final_percentage = self.compute_coverage(
+                num_covered=total_num_lines - total_num_violations,
+                num_total=total_num_lines,
+            )
 
         return DiffCoverage(
             total_num_lines=total_num_lines,

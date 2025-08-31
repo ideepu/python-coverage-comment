@@ -73,40 +73,40 @@ def test_template_no_marker(coverage_obj, diff_coverage_obj):
     with pytest.raises(MissingMarker):
         marker = '<!-- foobar -->'
         template.get_comment_markdown(
-            coverage=coverage_obj,
-            diff_coverage=diff_coverage_obj,
-            files=[],
+            template.read_template_file('comment.md.j2')[: -len(marker)],
+            coverage_obj,
+            diff_coverage_obj,
+            decimal.Decimal('100'),
+            decimal.Decimal('70'),
+            'org/repo',
+            1,
+            'main',
+            marker,
             count_files=0,
             coverage_files=[],
             count_coverage_files=0,
-            base_ref='main',
             max_files=25,
-            minimum_green=decimal.Decimal('100'),
-            minimum_orange=decimal.Decimal('70'),
-            repo_name='org/repo',
-            pr_number=1,
-            base_template=template.read_template_file('comment.md.j2')[: -len(marker)],
-            marker=marker,
+            files=[],
         )
 
 
 def test_template_error(coverage_obj, diff_coverage_obj):
     with pytest.raises(TemplateException):
         template.get_comment_markdown(
-            coverage=coverage_obj,
-            diff_coverage=diff_coverage_obj,
+            '{% for i in range(5) %}{{ i }{% endfor %}',
+            coverage_obj,
+            diff_coverage_obj,
+            decimal.Decimal('100'),
+            decimal.Decimal('70'),
+            'org/repo',
+            1,
+            'main',
+            '<!-- foo -->',
             files=[],
             count_files=0,
             coverage_files=[],
             count_coverage_files=0,
-            base_ref='main',
             max_files=25,
-            minimum_green=decimal.Decimal('100'),
-            minimum_orange=decimal.Decimal('70'),
-            repo_name='org/repo',
-            pr_number=1,
-            base_template='{% for i in range(5) %}{{ i }{% endfor %}',
-            marker='<!-- foo -->',
         )
 
 
@@ -119,25 +119,25 @@ def test_get_comment_markdown(coverage_obj, diff_coverage_obj):
     )
     result = (
         template.get_comment_markdown(
-            coverage=coverage_obj,
-            diff_coverage=diff_coverage_obj,
-            coverage_files=chaned_files,
-            count_coverage_files=total,
-            files=chaned_files,
-            count_files=total,
-            max_files=25,
-            minimum_green=decimal.Decimal('100'),
-            minimum_orange=decimal.Decimal('70'),
-            base_ref='main',
-            marker='<!-- foo -->',
-            repo_name='org/repo',
-            pr_number=1,
-            base_template="""
+            """
         {{ coverage.info.percent_covered | pct }}
         {{ diff_coverage.total_percent_covered | pct }}
         {% block foo %}foo{% endblock foo %}
         {{ marker }}
         """,
+            coverage_obj,
+            diff_coverage_obj,
+            decimal.Decimal('100'),
+            decimal.Decimal('70'),
+            'org/repo',
+            1,
+            'main',
+            '<!-- foo -->',
+            coverage_files=chaned_files,
+            count_coverage_files=total,
+            files=chaned_files,
+            count_files=total,
+            max_files=25,
         )
         .strip()
         .split(maxsplit=3)
@@ -161,20 +161,20 @@ def test_comment_template(coverage_obj, diff_coverage_obj):
         skip_covered_files_in_report=True,
     )
     result = template.get_comment_markdown(
-        coverage=coverage_obj,
-        diff_coverage=diff_coverage_obj,
+        template.read_template_file('comment.md.j2'),
+        coverage_obj,
+        diff_coverage_obj,
+        decimal.Decimal('100'),
+        decimal.Decimal('70'),
+        'org/repo',
+        1,
+        'main',
+        '<!-- foo -->',
         coverage_files=chaned_files,
         count_coverage_files=total,
         files=chaned_files,
         count_files=total,
         max_files=25,
-        minimum_green=decimal.Decimal('100'),
-        minimum_orange=decimal.Decimal('70'),
-        base_ref='main',
-        marker='<!-- foo -->',
-        repo_name='org/repo',
-        pr_number=1,
-        base_template=template.read_template_file('comment.md.j2'),
     )
     assert result.startswith('## Coverage report')
     assert '<!-- foo -->' in result
@@ -188,20 +188,20 @@ def test_comment_template_branch_coverage(coverage_obj, diff_coverage_obj):
         skip_covered_files_in_report=True,
     )
     result = template.get_comment_markdown(
-        coverage=coverage_obj,
-        diff_coverage=diff_coverage_obj,
+        template.read_template_file('comment.md.j2'),
+        coverage_obj,
+        diff_coverage_obj,
+        decimal.Decimal('100'),
+        decimal.Decimal('70'),
+        'org/repo',
+        1,
+        'main',
+        '<!-- foo -->',
         coverage_files=chaned_files,
         count_coverage_files=total,
         files=chaned_files,
         count_files=total,
         max_files=25,
-        minimum_green=decimal.Decimal('100'),
-        minimum_orange=decimal.Decimal('70'),
-        base_ref='main',
-        marker='<!-- foo -->',
-        repo_name='org/repo',
-        pr_number=1,
-        base_template=template.read_template_file('comment.md.j2'),
         branch_coverage=True,
     )
     assert result.startswith('## Coverage report')
@@ -220,20 +220,20 @@ def test_template_no_files(coverage_obj):
         files={},
     )
     result = template.get_comment_markdown(
-        coverage=coverage_obj,
-        diff_coverage=diff_coverage,
+        template.read_template_file('comment.md.j2'),
+        coverage_obj,
+        diff_coverage,
+        decimal.Decimal('79'),
+        decimal.Decimal('40'),
+        'org/repo',
+        5,
+        'main',
+        '<!-- foo -->',
         files=[],
         count_files=0,
         coverage_files=[],
         count_coverage_files=0,
-        minimum_green=decimal.Decimal('79'),
-        minimum_orange=decimal.Decimal('40'),
-        repo_name='org/repo',
-        base_ref='main',
-        pr_number=5,
         max_files=25,
-        base_template=template.read_template_file('comment.md.j2'),
-        marker='<!-- foo -->',
         subproject_id='foo',
     )
     assert '_This PR does not include changes to coverable code or code with missing coverage.' in result

@@ -62,7 +62,11 @@ class Main:
         if self.config.BRANCH_COVERAGE:
             coverage = diff_grouper.fill_branch_missing_groups(coverage=coverage)
         added_lines = GithubDiffParser(diff=self.github.pr_diff).parse()
-        diff_coverage = self.coverage_module.get_diff_coverage_info(added_lines=added_lines, coverage=coverage)
+        diff_coverage = self.coverage_module.get_diff_coverage_info(
+            added_lines=added_lines,
+            coverage=coverage,
+            branch_coverage=self.config.BRANCH_COVERAGE,
+        )
         self.coverage = coverage
         self.diff_coverage = diff_coverage
 
@@ -86,24 +90,24 @@ class Main:
         )
         try:
             comment = template.get_comment_markdown(
-                coverage=self.coverage,
-                diff_coverage=self.diff_coverage,
-                files=files_info,
-                count_files=count_files,
-                coverage_files=coverage_files_info,
-                count_coverage_files=count_coverage_files,
-                max_files=self.config.MAX_FILES_IN_COMMENT,
-                minimum_green=self.config.MINIMUM_GREEN,
-                minimum_orange=self.config.MINIMUM_ORANGE,
-                repo_name=self.config.GITHUB_REPOSITORY,
-                pr_number=self.github.pr_number,
-                base_ref=self.github.base_ref,
-                base_template=template.read_template_file('comment.md.j2'),
-                marker=marker,
+                template.read_template_file('comment.md.j2'),
+                self.coverage,
+                self.diff_coverage,
+                self.config.MINIMUM_GREEN,
+                self.config.MINIMUM_ORANGE,
+                self.config.GITHUB_REPOSITORY,
+                self.github.pr_number,
+                self.github.base_ref,
+                marker,
                 subproject_id=self.config.SUBPROJECT_ID,
                 branch_coverage=self.config.BRANCH_COVERAGE,
                 complete_project_report=self.config.COMPLETE_PROJECT_REPORT,
                 coverage_report_url=self.config.COVERAGE_REPORT_URL,
+                max_files=self.config.MAX_FILES_IN_COMMENT,
+                files=files_info,
+                count_files=count_files,
+                coverage_files=coverage_files_info,
+                count_coverage_files=count_coverage_files,
             )
         except MissingMarker as e:
             log.error(

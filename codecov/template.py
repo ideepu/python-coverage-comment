@@ -7,6 +7,7 @@ import hashlib
 import itertools
 import pathlib
 from importlib import resources
+from typing import Any
 
 import jinja2
 from jinja2.sandbox import SandboxedEnvironment
@@ -61,24 +62,17 @@ class FileInfo:
 
 
 def get_comment_markdown(  # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
+    base_template: str,
     coverage: Coverage,
     diff_coverage: DiffCoverage,
-    files: list[FileInfo],
-    count_files: int,
-    coverage_files: list[FileInfo],
-    count_coverage_files: int,
-    max_files: int | None,
     minimum_green: decimal.Decimal,
     minimum_orange: decimal.Decimal,
     repo_name: str,
     pr_number: int,
     base_ref: str,
-    base_template: str,
     marker: str,
-    subproject_id: str | None = None,
-    branch_coverage: bool = False,
-    complete_project_report: bool = False,
-    coverage_report_url: str | None = None,
+    /,
+    **kwargs: Any,
 ):
     env = SandboxedEnvironment(loader=jinja2.FileSystemLoader('codecov/template_files/'))
     env.filters['pct'] = pct
@@ -116,18 +110,10 @@ def get_comment_markdown(  # pylint: disable=too-many-arguments,too-many-locals,
         comment = env.from_string(base_template).render(
             coverage=coverage,
             diff_coverage=diff_coverage,
-            max_files=max_files,
-            files=files,
-            count_files=count_files,
-            coverage_files=coverage_files,
-            count_coverage_files=count_coverage_files,
             missing_diff_lines=missing_diff_lines,
             missing_lines_for_whole_project=missing_lines_for_whole_project,
-            subproject_id=subproject_id,
             marker=marker,
-            branch_coverage=branch_coverage,
-            complete_project_report=complete_project_report,
-            coverage_report_url=coverage_report_url,
+            **kwargs,
         )
     except jinja2.exceptions.TemplateError as exc:
         log.error('Template rendering error: %s', str(exc))

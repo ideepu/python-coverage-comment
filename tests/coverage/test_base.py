@@ -164,3 +164,92 @@ class TestBase:
             coverage=make_coverage_obj(**update_obj),
         )
         assert result == expected
+
+    @pytest.mark.parametrize(
+        'added_lines, update_obj, expected',
+        [
+            # A similar example to the previous one, but with branch coverage enabled.
+            # The statements are covered, but the branches are not.
+            (
+                {
+                    pathlib.Path('codebase/code.py'): [4, 5, 6],
+                    pathlib.Path('codebase/other.py'): [10, 13],
+                },
+                {},
+                DiffCoverage(
+                    total_num_lines=1,
+                    total_num_violations=1,
+                    total_percent_covered=decimal.Decimal('0.25'),
+                    num_changed_lines=5,
+                    # Percent is due to the fact that the branches are not covered.
+                    files={
+                        pathlib.Path('codebase/code.py'): FileDiffCoverage(
+                            path=pathlib.Path('codebase/code.py'),
+                            percent_covered=decimal.Decimal('0.25'),
+                            added_statements=[6],
+                            covered_statements=[],
+                            missing_statements=[6],
+                            added_lines=[4, 5, 6],
+                        ),
+                        pathlib.Path('codebase/other.py'): FileDiffCoverage(
+                            path=pathlib.Path('codebase/other.py'),
+                            percent_covered=decimal.Decimal('0.25'),
+                            added_statements=[],
+                            covered_statements=[],
+                            missing_statements=[],
+                            added_lines=[10, 13],
+                        ),
+                    },
+                ),
+            ),
+            # Files with missing coverage and branches
+            (
+                {
+                    pathlib.Path('codebase/code.py'): [2, 3, 4, 5, 6],
+                    pathlib.Path('codebase/other.py'): [10, 11, 12, 13],
+                },
+                {
+                    'codebase/code.py': {
+                        'executed_lines': [1, 2, 3, 5, 6],
+                        'missing_lines': [4, 5],
+                    },
+                    'codebase/other.py': {
+                        'executed_lines': [10, 11, 12, 13],
+                        'missing_lines': [10, 13],
+                    },
+                },
+                DiffCoverage(
+                    total_num_lines=9,
+                    total_num_violations=4,
+                    total_percent_covered=decimal.Decimal('0.4375'),
+                    num_changed_lines=9,
+                    # Percent is due to the fact that the branches are not covered.
+                    files={
+                        pathlib.Path('codebase/code.py'): FileDiffCoverage(
+                            path=pathlib.Path('codebase/code.py'),
+                            percent_covered=decimal.Decimal('0.625'),
+                            added_statements=[2, 3, 4, 5, 6],
+                            covered_statements=[2, 3, 5, 6],
+                            missing_statements=[4, 5],
+                            added_lines=[2, 3, 4, 5, 6],
+                        ),
+                        pathlib.Path('codebase/other.py'): FileDiffCoverage(
+                            path=pathlib.Path('codebase/other.py'),
+                            percent_covered=decimal.Decimal('0.625'),
+                            added_statements=[10, 11, 12, 13],
+                            covered_statements=[10, 11, 12, 13],
+                            missing_statements=[10, 13],
+                            added_lines=[10, 11, 12, 13],
+                        ),
+                    },
+                ),
+            ),
+        ],
+    )
+    def test_get_diff_coverage_info_branch_coverage(self, make_coverage_obj, added_lines, update_obj, expected):
+        result = BaseCoverageDemo().get_diff_coverage_info(
+            added_lines=added_lines,
+            coverage=make_coverage_obj(**update_obj),
+            branch_coverage=True,
+        )
+        assert result == expected
