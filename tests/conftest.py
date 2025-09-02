@@ -1,6 +1,6 @@
 # pylint: disable=redefined-outer-name
 # mypy: disable-error-code="operator, union-attr"
-from __future__ import annotations
+
 
 import datetime
 import decimal

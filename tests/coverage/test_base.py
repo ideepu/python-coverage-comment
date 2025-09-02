@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import decimal
 import json
 import pathlib
