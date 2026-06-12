@@ -5,7 +5,7 @@ import pathlib
 import pytest
 
 from codecov import template
-from codecov.coverage import DiffCoverage
+from codecov.coverage.base import DiffCoverage
 from codecov.exceptions import MissingMarker, TemplateException
 
 

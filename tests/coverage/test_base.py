@@ -1,3 +1,4 @@
+import dataclasses
 import decimal
 import json
 import pathlib
@@ -6,15 +7,9 @@ from unittest.mock import patch
 
 import pytest
 
-from codecov.coverage import Coverage, DiffCoverage, FileDiffCoverage
-from codecov.coverage.base import BaseCoverage
+from codecov.coverage.base import DiffCoverage, FileDiffCoverage
+from codecov.coverage.pytest import PytestCoverageHandler
 from codecov.exceptions import ConfigurationException
-
-
-class BaseCoverageDemo(BaseCoverage):
-    def extract_info(self, data):
-        del data
-        return Coverage(meta=None, info=None, files={})
 
 
 class TestBase:
@@ -29,21 +24,22 @@ class TestBase:
         ],
     )
     def test_compute_coverage(self, num_covered, num_total, expected_coverage):
-        assert BaseCoverageDemo().compute_coverage(num_covered, num_total) == decimal.Decimal(expected_coverage)
+        assert PytestCoverageHandler().compute_coverage(num_covered, num_total) == decimal.Decimal(expected_coverage)
 
     def test_get_coverage_info(self, coverage_json):
+        handler = PytestCoverageHandler()
         with patch('pathlib.Path.open') as mock_open:
             mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_json)
-            result = BaseCoverageDemo().get_coverage_info(pathlib.Path(tempfile.mkstemp(suffix='.json')[1]))
-            assert result == BaseCoverageDemo().extract_info(coverage_json)
+            result = handler.get_coverage_info(pathlib.Path(tempfile.mkstemp(suffix='.json')[1]))
+            assert result == handler.extract_info(coverage_json)
 
         with patch('pathlib.Path.open') as mock_open:
             mock_open.return_value.__enter__.return_value.read.return_value = b'invalid json'
             with pytest.raises(ConfigurationException):
-                BaseCoverageDemo().get_coverage_info(pathlib.Path(tempfile.mkstemp(suffix='.json')[1]))
+                handler.get_coverage_info(pathlib.Path(tempfile.mkstemp(suffix='.json')[1]))
 
         with pytest.raises(ConfigurationException):
-            BaseCoverageDemo().get_coverage_info(pathlib.Path('path/to/file.json'))
+            handler.get_coverage_info(pathlib.Path('path/to/file.json'))
 
     @pytest.mark.parametrize(
         'added_lines, update_obj, expected',
@@ -54,7 +50,7 @@ class TestBase:
             # that the total coverage is 50%.
             (
                 {pathlib.Path('codebase/code.py'): [1, 3]},
-                {'codebase/code.py': {'executed_lines': [1, 2], 'missing_lines': [3]}},
+                {'codebase/code.py': {'covered_lines': [1, 2], 'missing_lines': [3]}},
                 DiffCoverage(
                     total_num_lines=2,
                     total_num_violations=1,
@@ -79,7 +75,7 @@ class TestBase:
             # covered, nor imported.)
             (
                 {pathlib.Path('codebase/code2.py'): [1, 3]},
-                {'codebase/code.py': {'executed_lines': [1, 2], 'missing_lines': [3]}},
+                {'codebase/code.py': {'covered_lines': [1, 2], 'missing_lines': [3]}},
                 DiffCoverage(
                     total_num_lines=0,
                     total_num_violations=0,
@@ -93,7 +89,7 @@ class TestBase:
             # should not report any violation (and 100% coverage)
             (
                 {pathlib.Path('codebase/code.py'): [4, 5, 6]},
-                {'codebase/code.py': {'executed_lines': [1, 2, 3], 'missing_lines': [7]}},
+                {'codebase/code.py': {'covered_lines': [1, 2, 3], 'missing_lines': [7]}},
                 DiffCoverage(
                     total_num_lines=0,
                     total_num_violations=0,
@@ -121,11 +117,11 @@ class TestBase:
                 },
                 {
                     'codebase/code.py': {
-                        'executed_lines': [1, 2, 3, 5, 6],
+                        'covered_lines': [1, 2, 3, 5, 6],
                         'missing_lines': [7],
                     },
                     'codebase/other.py': {
-                        'executed_lines': [10, 11, 12],
+                        'covered_lines': [10, 11, 12],
                         'missing_lines': [13],
                     },
                 },
@@ -156,10 +152,11 @@ class TestBase:
             ),
         ],
     )
-    def test_get_diff_coverage_info(self, make_coverage_obj, added_lines, update_obj, expected):
-        result = BaseCoverageDemo().get_diff_coverage_info(
+    def test_get_diff_coverage_info(self, test_config, make_coverage_obj, added_lines, update_obj, expected):
+        result = PytestCoverageHandler().get_diff_coverage(
             added_lines=added_lines,
             coverage=make_coverage_obj(**update_obj),
+            config=test_config,
         )
         assert result == expected
 
@@ -208,11 +205,11 @@ class TestBase:
                 },
                 {
                     'codebase/code.py': {
-                        'executed_lines': [1, 2, 3, 5, 6],
+                        'covered_lines': [1, 2, 3, 5, 6],
                         'missing_lines': [4, 5],
                     },
                     'codebase/other.py': {
-                        'executed_lines': [10, 11, 12, 13],
+                        'covered_lines': [10, 11, 12, 13],
                         'missing_lines': [10, 13],
                     },
                 },
@@ -244,10 +241,18 @@ class TestBase:
             ),
         ],
     )
-    def test_get_diff_coverage_info_branch_coverage(self, make_coverage_obj, added_lines, update_obj, expected):
-        result = BaseCoverageDemo().get_diff_coverage_info(
+    def test_get_diff_coverage_info_branch_coverage(
+        self,
+        test_config,
+        make_coverage_obj,
+        added_lines,
+        update_obj,
+        expected,
+    ):
+        config = dataclasses.replace(test_config, BRANCH_COVERAGE=True)
+        result = PytestCoverageHandler().get_diff_coverage(
             added_lines=added_lines,
             coverage=make_coverage_obj(**update_obj),
-            branch_coverage=True,
+            config=config,
         )
         assert result == expected

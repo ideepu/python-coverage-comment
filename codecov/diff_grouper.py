@@ -1,7 +1,12 @@
 from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 from codecov import groups
-from codecov.coverage import Coverage, DiffCoverage
+
+if TYPE_CHECKING:
+    from codecov.coverage.base import DiffCoverage
+    from codecov.coverage.jest import JestCoverage
+    from codecov.coverage.pytest import PytestCoverage
 
 MAX_ANNOTATION_GAP = 3
 
@@ -21,7 +26,7 @@ def _flatten_branches(branches: list[list[int]] | None) -> list[int]:
 
 
 def get_missing_groups(
-    coverage: Coverage,
+    coverage: 'PytestCoverage | JestCoverage',
 ) -> Iterable[groups.Group]:
     for path, coverage_file in coverage.files.items():
         # Lines that are covered or excluded should not be considered for
@@ -29,7 +34,7 @@ def get_missing_groups(
         # (so, lines that can appear in a gap are lines that are missing, or
         # lines that do not contain code: blank lines or lines containing comments)
         separators = {
-            *coverage_file.executed_lines,
+            *coverage_file.covered_lines,
             *coverage_file.excluded_lines,
         }
         # Lines that should be considered for filling a gap, unless
@@ -50,13 +55,13 @@ def get_missing_groups(
 
 
 def get_diff_missing_groups(
-    coverage: Coverage,
-    diff_coverage: DiffCoverage,
+    coverage: 'PytestCoverage | JestCoverage',
+    diff_coverage: 'DiffCoverage',
 ) -> Iterable[groups.Group]:
     for path, diff_file in diff_coverage.files.items():
         coverage_file = coverage.files[path]
         separators = {
-            *coverage_file.executed_lines,
+            *coverage_file.covered_lines,
             *coverage_file.excluded_lines,
         }
         joiners = set(diff_file.added_lines) - separators
@@ -74,7 +79,7 @@ def get_diff_missing_groups(
             )
 
 
-def fill_branch_missing_groups(coverage: Coverage) -> Coverage:
+def fill_branch_missing_groups(coverage: 'PytestCoverage') -> 'PytestCoverage':
     for file_coverage in coverage.files.values():
         separators = {
             *_flatten_branches(file_coverage.executed_branches),
@@ -95,8 +100,8 @@ def fill_branch_missing_groups(coverage: Coverage) -> Coverage:
 
 
 def get_diff_branch_missing_groups(
-    coverage: Coverage,
-    diff_coverage: DiffCoverage,
+    coverage: 'PytestCoverage',
+    diff_coverage: 'DiffCoverage',
 ) -> Iterable[groups.Group]:
     for path, _ in diff_coverage.files.items():
         coverage_file = coverage.files[path]

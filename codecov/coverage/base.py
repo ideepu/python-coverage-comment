@@ -1,52 +1,15 @@
 import dataclasses
-import datetime
 import decimal
 import json
 import pathlib
 from abc import ABC, abstractmethod
+from typing import Any
 
+from codecov.config import Config, TestFramework
 from codecov.exceptions import ConfigurationException
 from codecov.log import log
 
-
-@dataclasses.dataclass
-class CoverageMetadata:
-    version: str
-    timestamp: datetime.datetime
-    branch_coverage: bool
-    show_contexts: bool
-
-
-@dataclasses.dataclass
-class CoverageInfo:  # pylint: disable=too-many-instance-attributes
-    covered_lines: int
-    num_statements: int
-    percent_covered: decimal.Decimal
-    percent_covered_display: str
-    missing_lines: int
-    excluded_lines: int
-    num_branches: int | None
-    num_partial_branches: int | None
-    covered_branches: int | None
-    missing_branches: int | None
-
-
-@dataclasses.dataclass
-class FileCoverage:
-    path: pathlib.Path
-    executed_lines: list[int]
-    missing_lines: list[int]
-    excluded_lines: list[int]
-    executed_branches: list[list[int]] | None
-    missing_branches: list[list[int]] | None
-    info: CoverageInfo
-
-
-@dataclasses.dataclass
-class Coverage:
-    meta: CoverageMetadata
-    info: CoverageInfo
-    files: dict[pathlib.Path, FileCoverage]
+COVERAGE_HANDLER_REGISTRY: dict[TestFramework, type['BaseCoverageHandler']] = {}
 
 
 @dataclasses.dataclass
@@ -70,27 +33,23 @@ class DiffCoverage:
     files: dict[pathlib.Path, FileDiffCoverage]
 
 
-class BaseCoverage(ABC):
-    def convert_to_decimal(self, value: float, precision: int = 2) -> decimal.Decimal:
-        return decimal.Decimal(str(float(value) / 100)).quantize(
+class BaseCoverageHandler(ABC):
+    TEST_FRAMEWORK: TestFramework
+
+    def __init_subclass__(cls) -> None:
+        COVERAGE_HANDLER_REGISTRY[cls.TEST_FRAMEWORK] = cls
+        super().__init_subclass__()
+
+    def convert_to_decimal(self, value: float | decimal.Decimal, precision: int = 2) -> decimal.Decimal:
+        if not isinstance(value, decimal.Decimal):
+            value = decimal.Decimal(str(float(value) / 100))
+        return value.quantize(
             exp=decimal.Decimal(10) ** -precision,
             rounding=decimal.ROUND_DOWN,
         )
 
-    def compute_coverage(
-        self,
-        num_covered: int,
-        num_total: int,
-        num_branches_covered: int = 0,
-        num_branches_total: int = 0,
-    ) -> decimal.Decimal:
-        numerator = decimal.Decimal(num_covered + num_branches_covered)
-        denominator = decimal.Decimal(num_total + num_branches_total)
-        if denominator == 0:
-            return decimal.Decimal('1')
-        return numerator / denominator
-
-    def get_coverage_info(self, coverage_path: pathlib.Path) -> Coverage:
+    # TODO: Fix the typing and rename this to get_coverage_json
+    def get_coverage_info(self, coverage_path: pathlib.Path) -> Any:
         try:
             with coverage_path.open() as coverage_data:
                 json_coverage = json.loads(coverage_data.read())
@@ -101,83 +60,33 @@ class BaseCoverage(ABC):
             log.error('Invalid JSON format in coverage report file: %s', coverage_path)
             raise ConfigurationException from exc
 
-        return self.extract_info(data=json_coverage)
+        # TODO: Move the below code to a separate function
+        try:
+            return self.extract_info(data=json_coverage)
+        except KeyError as exc:
+            log.error('Unable to extract coverage info from coverage report file: %s', coverage_path)
+            raise ConfigurationException from exc
 
     @abstractmethod
-    def extract_info(self, data: dict) -> Coverage:
+    def extract_info(self, data: dict) -> Any:
         raise NotImplementedError  # pragma: no cover
 
-    def get_diff_coverage_info(  # pylint: disable=too-many-locals
+    def get_coverage(self, config: Config) -> Any:
+        return self.get_coverage_info(coverage_path=config.COVERAGE_PATH)
+
+    @abstractmethod
+    def get_diff_coverage(
         self,
         added_lines: dict[pathlib.Path, list[int]],
-        coverage: Coverage,
-        branch_coverage: bool = False,
+        coverage: Any,
+        config: Config,
     ) -> DiffCoverage:
-        files = {}
-        total_num_lines = 0
-        total_num_violations = 0
-        total_num_branches_covered = 0
-        total_num_branches = 0
-        num_changed_lines = 0
+        raise NotImplementedError  # pragma: no cover
 
-        for path, added_lines_for_file in added_lines.items():
-            num_changed_lines += len(added_lines_for_file)
-
-            try:
-                file = coverage.files[path]
-            except KeyError:
-                continue
-
-            executed = set(file.executed_lines) & set(added_lines_for_file)
-            count_executed = len(executed)
-
-            missing = set(file.missing_lines) & set(added_lines_for_file)
-            count_missing = len(missing)
-
-            # Added lines includes comments, blank lines, etc in the diff, So we take the actual statements in the file
-            added = executed | missing
-            count_total = len(added)
-
-            total_num_lines += count_total
-            total_num_violations += count_missing
-
-            if branch_coverage:
-                total_num_branches_covered += file.info.covered_branches or 0
-                total_num_branches += file.info.num_branches or 0
-                percent_covered = self.compute_coverage(
-                    num_covered=count_executed,
-                    num_total=count_total,
-                    num_branches_covered=file.info.covered_branches or 0,
-                    num_branches_total=file.info.num_branches or 0,
-                )
-            else:
-                percent_covered = self.compute_coverage(num_covered=count_executed, num_total=count_total)
-
-            files[path] = FileDiffCoverage(
-                path=path,
-                percent_covered=percent_covered,
-                covered_statements=sorted(executed),
-                missing_statements=sorted(missing),
-                added_statements=sorted(added),
-                added_lines=added_lines_for_file,
-            )
-        if branch_coverage:
-            final_percentage = self.compute_coverage(
-                num_covered=total_num_lines - total_num_violations,
-                num_total=total_num_lines,
-                num_branches_covered=total_num_branches_covered,
-                num_branches_total=total_num_branches,
-            )
-        else:
-            final_percentage = self.compute_coverage(
-                num_covered=total_num_lines - total_num_violations,
-                num_total=total_num_lines,
-            )
-
-        return DiffCoverage(
-            total_num_lines=total_num_lines,
-            total_num_violations=total_num_violations,
-            total_percent_covered=final_percentage,
-            num_changed_lines=num_changed_lines,
-            files=files,
-        )
+    @classmethod
+    def get_coverage_handler(cls, test_framework: TestFramework) -> type['BaseCoverageHandler']:
+        try:
+            return COVERAGE_HANDLER_REGISTRY[test_framework]
+        except KeyError as exc:
+            log.error('No coverage handler found for test framework: %s', test_framework.value)
+            raise ConfigurationException from exc
