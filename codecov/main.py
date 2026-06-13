@@ -19,7 +19,7 @@ class Main:
         self._init_log()
         self.github = self._init_github()
         self.coverage_module = self._init_coverage_module()
-        self.marker: str = self._init_marker()
+        self.marker: str = template.MARKER
         self.comment: str = ''
         self.coverage: PytestCoverage | JestCoverage
         self.diff_coverage: DiffCoverage
@@ -47,9 +47,6 @@ class Main:
         except ConfigurationException as e:
             log.error('Error initializing coverage module. Please check the test framework and try again.')
             raise CoreProcessingException from e
-
-    def _init_marker(self) -> str:
-        return template.get_marker(marker_id=self.config.SUBPROJECT_ID)
 
     def run(self):
         self._process_coverage()
@@ -105,7 +102,6 @@ class Main:
                 self.github.pr_number,
                 self.github.base_ref,
                 self.marker,
-                subproject_id=self.config.SUBPROJECT_ID,
                 branch_coverage=self.config.BRANCH_COVERAGE,
                 complete_project_report=self.config.COMPLETE_PROJECT_REPORT,
                 coverage_report_url=self.config.COVERAGE_REPORT_URL,
