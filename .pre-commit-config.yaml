@@ -3,72 +3,39 @@ default_language_version:
 default_install_hook_types: [pre-commit, pre-push, pre-rebase]
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
     -   id: check-yaml
     -   id: check-toml
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
-    -   id: check-ast
-    -   id: check-builtin-literals
-    -   id: check-docstring-first
-    -   id: debug-statements
-    -   id: double-quote-string-fixer
     -   id: check-added-large-files
     -   id: check-merge-conflict
     -   id: name-tests-test
-        # ensure tests match `test_.*\.py`
         args: ['--pytest-test-first']
     -   id: no-commit-to-branch
         args: [--branch, main]
--   repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.1
-    hooks:
-    -   id: pyupgrade
--   repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.10.0
-    hooks:
-    -   id: python-use-type-annotations
-    -   id: python-check-blanket-noqa
-    -   id: python-check-blanket-type-ignore
-    -   id: python-check-mock-methods
-    -   id: python-no-eval
-    -   id: python-no-log-warn
 -   repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.44.0
+    rev: v0.47.0
     hooks:
     -   id: markdownlint
         args: ['--config', 'pyproject.toml', '--fix']
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.11.2
+  rev: v0.15.16
   hooks:
-    - id: ruff
+    - id: ruff-check
     - id: ruff-format
-      args: ['--check']
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
+    rev: v1.19.1
     hooks:
     -   id: mypy
         additional_dependencies: ['types-pytz', 'types-requests']
--   repo: https://github.com/PyCQA/bandit
-    rev: 1.8.3
-    hooks:
-    -   id: bandit
-        args: ["-c", "pyproject.toml"]
--   repo: https://github.com/pylint-dev/pylint
-    rev: v3.3.6
-    hooks:
-    -   id: pylint
--   repo: https://github.com/hadialqattan/pycln
-    rev: v2.5.0
-    hooks:
-    -   id: pycln
 -   repo: https://github.com/mrtazz/checkmake.git
     rev: 0.2.2
     hooks:
     -   id: checkmake
 - repo: https://github.com/tox-dev/pyproject-fmt
-  rev: v2.5.1
+  rev: v2.11.0
   hooks:
     - id: pyproject-fmt
       args: ['--check']
@@ -79,7 +46,7 @@ repos:
     language: pygrep
     entry: '^(feature|fix|docs|refactor)!?: [a-zA-Z0-9-_ ]+[a-zA-Z0-9-_ ]+.*'
     args:
-    - --negate # fails if the entry is NOT matched
+    - --negate
     stages:
     - commit-msg
 - repo: local

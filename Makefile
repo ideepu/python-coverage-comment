@@ -1,51 +1,46 @@
 SHELL := /bin/bash
 
-.PHONY: setup setup-pipenv install install-dev lint test run clean-setup clean-lint all clean
+.PHONY: setup install install-dev lint test run clean-setup clean-lint all clean
 
 setup: install-dev
-	pipenv run pre-commit install
-	pipenv run pre-commit install --hook-type commit-msg
-
-setup-pipenv:
-	python -m pip install --upgrade pip
-	pip install pipenv
+	uv run pre-commit install
+	uv run pre-commit install --hook-type commit-msg
 
 install:
-	pipenv sync
+	uv sync --no-default-groups
 
-install-dev:
-	pipenv sync --dev
+dev:
+	uv sync --all-groups
 
 lint:
-	pipenv run pre-commit run --all-files
+	uv run pre-commit run --all-files
 
 test:
-	pipenv run pytest tests/* --cov-branch --cov=codecov --cov-report=term-missing
+	uv run pytest tests/* --cov-branch --cov=codecov --cov-report=term-missing
 
 report:
-	pipenv run pytest tests  --cov-branch --cov=codecov --cov-report=term-missing --cov-report=json:/tmp/report.json
+	uv run pytest tests --cov-branch --cov=codecov --cov-report=term-missing --cov-report=json:/tmp/report.json
 
 build:
-	pipenv run python3 -m build
+	uv run python -m build
 
 test-publish:
-	pipenv run python3 -m twine upload --repository testpypi dist/*
+	uv run python -m twine upload --repository testpypi dist/*
 
 publish:
-	pipenv run python3 -m twine upload dist/*
+	uv run python -m twine upload dist/*
 
 run:
-	pipenv run python run.py
+	uv run python run.py
 
 clean-setup:
-	pipenv run pre-commit uninstall --hook-type commit-msg
-	pipenv run pre-commit uninstall
-	pipenv clean
+	uv run pre-commit uninstall --hook-type commit-msg
+	uv run pre-commit uninstall
 
 clean-lint:
-	pipenv run pre-commit clean
-	pipenv run pre-commit gc
+	uv run pre-commit clean
+	uv run pre-commit gc
 
-all: setup-pipenv setup lint
+all: setup lint
 
 clean: clean-lint clean-setup
