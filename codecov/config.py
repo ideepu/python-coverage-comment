@@ -1,12 +1,10 @@
-from __future__ import annotations
-
 import dataclasses
 import decimal
 import inspect
 import pathlib
 from collections.abc import MutableMapping
 from enum import Enum
-from typing import Any, Callable
+from typing import Any, Callable, Self
 
 from codecov.exceptions import MissingEnvironmentVariable
 
@@ -35,11 +33,14 @@ class AnnotationType(Enum):
     ERROR = 'error'
 
 
+class TestFramework(Enum):
+    PYTEST = 'pytest'
+    JEST = 'jest'
+
+
 # pylint: disable=invalid-name, too-many-instance-attributes
 @dataclasses.dataclass(kw_only=True)
 class Config:
-    """This object defines the environment variables"""
-
     GITHUB_REPOSITORY: str
     COVERAGE_PATH: pathlib.Path
     GITHUB_TOKEN: str = dataclasses.field(repr=False)
@@ -47,11 +48,13 @@ class Config:
     # Branch to create the comment on (alternate to get PR number if not provided)
     # Example Organisation:branch-name (Company:sample-branch) or User:branch-name (user:sample-branch)
     GITHUB_REF: str | None = None
-    SUBPROJECT_ID: str | None = None
+    SUBPROJECT_ID: str | None = None  # Deprecated
     MINIMUM_GREEN: decimal.Decimal = decimal.Decimal('100')
     MINIMUM_ORANGE: decimal.Decimal = decimal.Decimal('70')
+    TEST_FRAMEWORK: TestFramework = TestFramework.PYTEST
+    # TODO: Remove branch coverage and just use the report
     BRANCH_COVERAGE: bool = False
-    SKIP_COVERAGE: bool = False
+    SKIP_COVERAGE: bool = False  # Deprecated
     ANNOTATE_MISSING_LINES: bool = False
     ANNOTATION_TYPE: AnnotationType = AnnotationType.WARNING
     ANNOTATIONS_OUTPUT_PATH: pathlib.Path | None = None
@@ -60,11 +63,18 @@ class Config:
     SKIP_COVERED_FILES_IN_REPORT: bool = True
     COMPLETE_PROJECT_REPORT: bool = False
     COVERAGE_REPORT_URL: str | None = None
+    # TODO: Change this to LOG_LEVEL. INFO; DEBUG; NONE;
     DEBUG: bool = False
 
     def __post_init__(self) -> None:
         if self.GITHUB_PR_NUMBER is None and self.GITHUB_REF is None:
             raise ValueError('Either GITHUB_PR_NUMBER or GITHUB_REF must be provided')
+
+        if self.SKIP_COVERAGE and not self.ANNOTATE_MISSING_LINES:
+            raise ValueError(
+                'No action taken as both SKIP_COVERAGE and ANNOTATE_MISSING_LINES are set to False. \
+                Neither comments nor annotations will be generated.'
+            )
 
     # Clean methods
     @classmethod
@@ -122,10 +132,14 @@ class Config:
             return path
         raise ValueError
 
+    @classmethod
+    def clean_test_framework(cls, value: str) -> TestFramework:
+        return TestFramework(value)
+
     # We need to type environ as a MutableMapping because that's what
     # os.environ is, and `dict[str, str]` is not enough
     @classmethod
-    def from_environ(cls, environ: MutableMapping[str, str]) -> Config:
+    def from_environ(cls, environ: MutableMapping[str, str]) -> Self:
         possible_variables = list(inspect.signature(cls).parameters)
         config_dict: dict[str, Any] = {k: v for k, v in environ.items() if k in possible_variables}
         for key, value in config_dict.items():

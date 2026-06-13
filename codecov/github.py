@@ -283,7 +283,7 @@ class GithubDiffParser:
 
     def _get_hunk_start_and_length(self, diff_line: str) -> tuple[int, int]:
         # The diff_line looks like: "@@ -60,0 +61,9 @@ ...", and we want to extract the starting line number of the added lines.
-        # diff_line.split()[2] gives "+61,9" (the added lines part).
+        # diff_line.split()[2] gives "+61,9" (the added lines part, the right part of the pr diff).
         # 61 is the starting line number of the added lines and 9 is the number of lines in the hunk (context lines + added lines).
         # [1:] removes the '+' sign, so we get "61,9".
         # Adding ',1' ensures that if there's no comma (e.g., "+61"), we still get a tuple ("61", "1").

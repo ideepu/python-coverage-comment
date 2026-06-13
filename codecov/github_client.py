@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any
 
 import httpx
@@ -19,8 +17,21 @@ TIMEOUT = 60
 BASE_URL = 'https://api.github.com'
 
 
+class JsonObject(dict):
+    """
+    general json object that can bind any fields but also act as a dict.
+    """
+
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError as e:
+            log.error("'Dict' object has no attribute '%s'", key)
+            raise AttributeError from e
+
+
 class _Executable:
-    def __init__(self, _gh: GitHubClient, _method: str, _path: str):
+    def __init__(self, _gh: 'GitHubClient', _method: str, _path: str):
         self._gh = _gh
         self._method = _method
         self._path = _path
@@ -51,19 +62,6 @@ def _response_contents(response: httpx.Response) -> JsonObject | bytes:
     if response.headers.get('content-type', '').startswith('application/json'):
         return response.json(object_hook=JsonObject)
     return response.content
-
-
-class JsonObject(dict):
-    """
-    general json object that can bind any fields but also act as a dict.
-    """
-
-    def __getattr__(self, key):
-        try:
-            return self[key]
-        except KeyError as e:
-            log.error("'Dict' object has no attribute '%s'", key)
-            raise AttributeError from e
 
 
 class GitHubClient:

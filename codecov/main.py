@@ -1,10 +1,12 @@
 import json
 import os
+from typing import cast
 
 from codecov import diff_grouper, groups, template
 from codecov.config import Config
-from codecov.coverage import PytestCoverage
-from codecov.coverage.base import Coverage, DiffCoverage
+from codecov.coverage.base import BaseCoverageHandler, DiffCoverage
+from codecov.coverage.jest import JestCoverage
+from codecov.coverage.pytest import PytestCoverage
 from codecov.exceptions import ConfigurationException, CoreProcessingException, MissingMarker, TemplateException
 from codecov.github import Github, GithubDiffParser
 from codecov.github_client import GitHubClient
@@ -15,27 +17,20 @@ class Main:
     def __init__(self):
         self.config = self._init_config()
         self._init_log()
-        self._init_required()
         self.github = self._init_github()
-        self.coverage: Coverage
+        self.coverage_module = self._init_coverage_module()
+        self.marker: str = self._init_marker()
+        self.comment: str = ''
+        self.coverage: PytestCoverage | JestCoverage
         self.diff_coverage: DiffCoverage
-        # Default coverage module
-        self.coverage_module = PytestCoverage()
 
-    def _init_config(self):
+    def _init_config(self) -> Config:
         return Config.from_environ(environ=os.environ)
 
-    def _init_log(self):
+    def _init_log(self) -> None:
         log_setup(debug=self.config.DEBUG)
 
-    def _init_required(self):
-        if self.config.SKIP_COVERAGE and not self.config.ANNOTATE_MISSING_LINES:
-            log.error(
-                'No action taken as both SKIP_COVERAGE and ANNOTATE_MISSING_LINES are set to False. No comments or annotations will be generated.'
-            )
-            raise CoreProcessingException
-
-    def _init_github(self):
+    def _init_github(self) -> Github:
         gh_client = GitHubClient(token=self.config.GITHUB_TOKEN)
         github = Github(
             client=gh_client,
@@ -46,46 +41,57 @@ class Main:
         )
         return github
 
+    def _init_coverage_module(self) -> BaseCoverageHandler:
+        try:
+            return BaseCoverageHandler.get_coverage_handler(test_framework=self.config.TEST_FRAMEWORK)()
+        except ConfigurationException as e:
+            log.error('Error initializing coverage module. Please check the test framework and try again.')
+            raise CoreProcessingException from e
+
+    def _init_marker(self) -> str:
+        return template.get_marker(marker_id=self.config.SUBPROJECT_ID)
+
     def run(self):
         self._process_coverage()
-        self._process_pr()
+        self._render_comment_markdown()
+        self._create_comment()
         self._generate_annotations()
 
     def _process_coverage(self):
         log.info('Processing coverage data')
-        try:
-            coverage = self.coverage_module.get_coverage_info(coverage_path=self.config.COVERAGE_PATH)
-        except ConfigurationException as e:
-            log.error('Error parsing the coverage file. Please check the file and try again.')
-            raise CoreProcessingException from e
-
-        if self.config.BRANCH_COVERAGE:
-            coverage = diff_grouper.fill_branch_missing_groups(coverage=coverage)
+        coverage = self._get_coverage()
         added_lines = GithubDiffParser(diff=self.github.pr_diff).parse()
-        diff_coverage = self.coverage_module.get_diff_coverage_info(
+        diff_coverage = self.coverage_module.get_diff_coverage(
             added_lines=added_lines,
             coverage=coverage,
-            branch_coverage=self.config.BRANCH_COVERAGE,
+            config=self.config,
         )
         self.coverage = coverage
         self.diff_coverage = diff_coverage
 
-    def _process_pr(self):
+    def _get_coverage(self) -> PytestCoverage | JestCoverage:
+        try:
+            return self.coverage_module.get_coverage(config=self.config)
+        except ConfigurationException as e:
+            log.error('Error parsing the coverage file. Please check the file and try again.')
+            raise CoreProcessingException from e
+
+    def _render_comment_markdown(self) -> None:
         if self.config.SKIP_COVERAGE:
             log.info('Skipping coverage report generation.')
             return
 
         log.info('Generating comment for PR #%s', self.github.pr_number)
-        marker = template.get_marker(marker_id=self.config.SUBPROJECT_ID)
-        files_info, count_files = template.select_changed_files(
+        diff_files_info, diff_count_files = template.select_changed_files(
             coverage=self.coverage,
             diff_coverage=self.diff_coverage,
             max_files=self.config.MAX_FILES_IN_COMMENT,
             skip_covered_files_in_report=self.config.SKIP_COVERED_FILES_IN_REPORT,
         )
+        remaining_files = self.config.MAX_FILES_IN_COMMENT - diff_count_files
         coverage_files_info, count_coverage_files = template.select_files(
             coverage=self.coverage,
-            max_files=self.config.MAX_FILES_IN_COMMENT - count_files,  # Truncate the report to MAX_FILES_IN_COMMENT
+            max_files=remaining_files,  # Truncate the report to MAX_FILES_IN_COMMENT
             skip_covered_files_in_report=self.config.SKIP_COVERED_FILES_IN_REPORT,
         )
         try:
@@ -98,21 +104,21 @@ class Main:
                 self.config.GITHUB_REPOSITORY,
                 self.github.pr_number,
                 self.github.base_ref,
-                marker,
+                self.marker,
                 subproject_id=self.config.SUBPROJECT_ID,
                 branch_coverage=self.config.BRANCH_COVERAGE,
                 complete_project_report=self.config.COMPLETE_PROJECT_REPORT,
                 coverage_report_url=self.config.COVERAGE_REPORT_URL,
                 max_files=self.config.MAX_FILES_IN_COMMENT,
-                files=files_info,
-                count_files=count_files,
+                files=diff_files_info,
+                count_files=diff_count_files,
                 coverage_files=coverage_files_info,
                 count_coverage_files=count_coverage_files,
             )
         except MissingMarker as e:
             log.error(
                 'Marker "%s" not found. This marker is required to identify the comment and prevent creating or overwriting comments.',
-                marker,
+                self.marker,
             )
             raise CoreProcessingException from e
         except TemplateException as e:
@@ -122,7 +128,14 @@ class Main:
             )
             raise CoreProcessingException from e
 
-        self.github.post_comment(contents=comment, marker=marker)
+        self.comment = comment
+
+    def _create_comment(self):
+        if not self.comment:
+            log.error('Failed to generate comment, rendered template is empty.')
+            raise CoreProcessingException
+
+        self.github.post_comment(contents=self.comment, marker=self.marker)
         log.info('Comment created on PR.')
 
     def _generate_annotations(self):
@@ -139,7 +152,7 @@ class Main:
 
         if self.config.BRANCH_COVERAGE:
             branch_annotations = diff_grouper.get_diff_branch_missing_groups(
-                coverage=self.coverage,
+                coverage=cast(PytestCoverage, self.coverage),
                 diff_coverage=self.diff_coverage,
             )
             formatted_annotations.extend(

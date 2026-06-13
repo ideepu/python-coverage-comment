@@ -2,6 +2,7 @@
 # mypy: disable-error-code="operator, union-attr"
 
 
+import dataclasses
 import datetime
 import decimal
 import functools
@@ -14,7 +15,14 @@ import httpx
 import pytest
 
 from codecov.config import Config
-from codecov.coverage import Coverage, CoverageInfo, CoverageMetadata, DiffCoverage, FileCoverage, PytestCoverage
+from codecov.coverage.pytest import (
+    DiffCoverage,
+    PytestCoverage,
+    PytestCoverageHandler,
+    PytestCoverageInfo,
+    PytestCoverageMetadata,
+    PytestFileCoverage,
+)
 from codecov.github_client import GitHubClient
 
 
@@ -33,17 +41,17 @@ def test_config() -> Config:
 
 
 @pytest.fixture
-def make_coverage() -> Callable[[str, bool], Coverage]:
-    def _(code: str, has_branches: bool = True) -> Coverage:
+def make_coverage() -> Callable[[str, bool], PytestCoverage]:
+    def _(code: str, has_branches: bool = True) -> PytestCoverage:
         current_file = None
-        coverage_obj = Coverage(
-            meta=CoverageMetadata(
+        coverage_obj = PytestCoverage(
+            meta=PytestCoverageMetadata(
                 version='1.2.3',
                 timestamp=datetime.datetime(2000, 1, 1),
                 branch_coverage=True,
                 show_contexts=False,
             ),
-            info=CoverageInfo(
+            info=PytestCoverageInfo(
                 covered_lines=0,
                 num_statements=0,
                 percent_covered=decimal.Decimal('1.0'),
@@ -70,12 +78,12 @@ def make_coverage() -> Callable[[str, bool], Coverage]:
             assert current_file, (line, current_file, code)
             line_number += 1
             if coverage_obj.files.get(current_file) is None:
-                coverage_obj.files[current_file] = FileCoverage(
+                coverage_obj.files[current_file] = PytestFileCoverage(
                     path=current_file,
-                    executed_lines=[],
+                    covered_lines=[],
                     missing_lines=[],
                     excluded_lines=[],
-                    info=CoverageInfo(
+                    info=PytestCoverageInfo(
                         covered_lines=0,
                         num_statements=0,
                         percent_covered=decimal.Decimal('1.0'),
@@ -104,7 +112,7 @@ def make_coverage() -> Callable[[str, bool], Coverage]:
                 coverage_obj.files[current_file].info.num_statements += 1
                 coverage_obj.info.num_statements += 1
             if 'line covered' in line:
-                coverage_obj.files[current_file].executed_lines.append(line_number)
+                coverage_obj.files[current_file].covered_lines.append(line_number)
                 coverage_obj.files[current_file].info.covered_lines += 1
                 coverage_obj.info.covered_lines += 1
             elif 'line missing' in line:
@@ -134,7 +142,7 @@ def make_coverage() -> Callable[[str, bool], Coverage]:
                     coverage_obj.info.missing_branches += 1
 
             info = coverage_obj.files[current_file].info
-            coverage_obj.files[current_file].info.percent_covered = PytestCoverage().compute_coverage(
+            coverage_obj.files[current_file].info.percent_covered = PytestCoverageHandler().compute_coverage(
                 num_covered=info.covered_lines,
                 num_total=info.num_statements,
             )
@@ -143,7 +151,7 @@ def make_coverage() -> Callable[[str, bool], Coverage]:
             ].info.percent_covered_display = f'{coverage_obj.files[current_file].info.percent_covered:.0%}'
 
             info = coverage_obj.info
-            coverage_obj.info.percent_covered = PytestCoverage().compute_coverage(
+            coverage_obj.info.percent_covered = PytestCoverageHandler().compute_coverage(
                 num_covered=info.covered_lines,
                 num_total=info.num_statements,
             )
@@ -154,13 +162,19 @@ def make_coverage() -> Callable[[str, bool], Coverage]:
 
 
 @pytest.fixture
-def make_diff_coverage():
-    return PytestCoverage().get_diff_coverage_info
+def make_diff_coverage(test_config):
+    handler = PytestCoverageHandler()
+
+    def _(added_lines, coverage, branch_coverage=False):
+        config = dataclasses.replace(test_config, BRANCH_COVERAGE=branch_coverage)
+        return handler.get_diff_coverage(added_lines=added_lines, coverage=coverage, config=config)
+
+    return _
 
 
 @pytest.fixture
-def make_coverage_and_diff(make_coverage, make_diff_coverage) -> Callable[[str], tuple[Coverage, DiffCoverage]]:
-    def _(code: str) -> tuple[Coverage, DiffCoverage]:
+def make_coverage_and_diff(make_coverage, make_diff_coverage) -> Callable[[str], tuple[PytestCoverage, DiffCoverage]]:
+    def _(code: str) -> tuple[PytestCoverage, DiffCoverage]:
         added_lines: dict[pathlib.Path, list[int]] = {}
         new_code = ''
         current_file = None
