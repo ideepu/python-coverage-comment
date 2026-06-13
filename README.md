@@ -69,7 +69,7 @@ Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` 
    project coverage, this may be expected. For consistent results, it is recommended to enable branch
    coverage when your report includes it.
 
-## Setting up Local Environment using Pipenv
+## Setting up Local Environment using uv
 
 To get started, follow these steps:
 
@@ -85,11 +85,7 @@ To get started, follow these steps:
     cd <repository_directory>
     ```
 
-3. create `.env`:
-
-    ```bash
-    echo "PIPENV_VENV_IN_PROJECT=1" >> .env
-    ```
+3. Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if you do not have it yet.
 
 4. Build the project:
 

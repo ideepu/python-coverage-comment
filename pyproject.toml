@@ -13,23 +13,13 @@ license = { file = "LICENSE" }
 maintainers = [
   { name = "Pradeep Tammali", email = "pradeeptammaliwork@gmail.com" },
 ]
-requires-python = ">=3.0"
+requires-python = ">=3.11"
 classifiers = [
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.0",
-  "Programming Language :: Python :: 3.1",
-  "Programming Language :: Python :: 3.2",
-  "Programming Language :: Python :: 3.3",
-  "Programming Language :: Python :: 3.4",
-  "Programming Language :: Python :: 3.5",
-  "Programming Language :: Python :: 3.6",
-  "Programming Language :: Python :: 3.7",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
   "httpx",
@@ -39,42 +29,44 @@ urls.Homepage = "https://github.com/PradeepTammali/python-coverage-comment"
 urls.Issues = "https://github.com/PradeepTammali/python-coverage-comment/issues"
 scripts.codecov = "codecov.main:main"
 
+[dependency-groups]
+dev = [
+  "build>=1.2",
+  "ipython>=8",
+  "mypy>=1.15",
+  "pre-commit>=4",
+  "pytest>=8.3",
+  "pytest-cov>=6",
+  "pytest-env>=1.1",
+  "ruff>=0.11",
+  "twine>=6",
+]
+
+[tool.uv]
+default-groups = [ "dev" ]
+
 [tool.ruff]
 target-version = "py311"
 
 line-length = 120
 format.quote-style = "single"
 lint.select = [
-  "E", # Errors
-  "F", # Formatting
-  "S", # Bandit
-  "W", # Warnings
+  "E",   # Errors
+  "F",   # Pyflakes
+  "G",   # Logging
+  "I",   # isort
+  "PGH", # No blanket noqa/type ignore
+  "S",   # Bandit
+  "T10", # Debugger statements
+  "UP",  # pyupgrade
+  "W",   # Warnings
 ]
 lint.ignore = [
-  # format
   "E501", # line too long
 ]
-# Ignore assert usage in tests
-lint.per-file-ignores.'tests/*.py' = [ "S101" ]
+lint.per-file-ignores."tests/*.py" = [ "S101" ]
 lint.isort.combine-as-imports = true
 lint.mccabe.max-complexity = 10
-
-[tool.pylint.MASTER]
-ignore-paths = [ 'tests/*' ]
-
-[tool.pylint.FORMAT]
-indent-string = '    '
-max-line-length = 120
-
-[tool.pylint."MESSAGES CONTROL"]
-disable = '''
-    missing-docstring,
-    line-too-long,
-    import-error,
-    fixme,
-    no-value-for-parameter,
-    too-few-public-methods
-'''
 
 [tool.pytest.ini_options]
 env = [ 'APP_ENVIRONMENT = unittest' ]
@@ -95,12 +87,6 @@ default = true
 indent = 4
 
 [MD013]
-# Number of characters
 line_length = 120
-# Number of characters for headings
 heading_line_length = 80
-# Number of characters for code blocks
 code_block_line_length = 120
-
-[tool.bandit]
-exclude_dirs = [ "tests/*" ]

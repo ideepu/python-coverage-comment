@@ -2,9 +2,9 @@ import dataclasses
 import decimal
 import inspect
 import pathlib
-from collections.abc import MutableMapping
+from collections.abc import Callable, MutableMapping
 from enum import Enum
-from typing import Any, Callable, Self
+from typing import Any, Self
 
 from codecov.exceptions import MissingEnvironmentVariable
 
