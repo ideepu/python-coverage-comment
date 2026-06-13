@@ -48,13 +48,13 @@ class Config:
     # Branch to create the comment on (alternate to get PR number if not provided)
     # Example Organisation:branch-name (Company:sample-branch) or User:branch-name (user:sample-branch)
     GITHUB_REF: str | None = None
-    SUBPROJECT_ID: str | None = None
+    SUBPROJECT_ID: str | None = None  # Deprecated
     MINIMUM_GREEN: decimal.Decimal = decimal.Decimal('100')
     MINIMUM_ORANGE: decimal.Decimal = decimal.Decimal('70')
     TEST_FRAMEWORK: TestFramework = TestFramework.PYTEST
     # TODO: Remove branch coverage and just use the report
     BRANCH_COVERAGE: bool = False
-    SKIP_COVERAGE: bool = False
+    SKIP_COVERAGE: bool = False  # Deprecated
     ANNOTATE_MISSING_LINES: bool = False
     ANNOTATION_TYPE: AnnotationType = AnnotationType.WARNING
     ANNOTATIONS_OUTPUT_PATH: pathlib.Path | None = None

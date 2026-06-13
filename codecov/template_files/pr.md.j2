@@ -118,70 +118,70 @@
     </tbody>
     <tfoot>
       <tr>
-      <td><b>Project Total</b></td>
+        <td><b>Project Total</b></td>
 
 
-      {#- Statements cell -#}
-      {%- block statements_badge_total_cell scoped -%}
-      {{- macros.statements_badge(
-        path="whole project",
-        statements_count=coverage.info.num_statements,
-      ) -}}
-      {%- endblock statements_badge_total_cell -%}
+        {#- Statements cell -#}
+        {%- block statements_badge_total_cell scoped -%}
+        {{- macros.statements_badge(
+          path="whole project",
+          statements_count=coverage.info.num_statements,
+        ) -}}
+        {%- endblock statements_badge_total_cell -%}
 
-      {#- Missing cell -#}
-      {%- block missing_lines_badge_total_cell scoped -%}
-      {{- macros.missing_lines_badge(
-        path="the whole project",
-        missing_lines_count=coverage.info.missing_lines,
-      ) -}}
-      {%- endblock missing_lines_badge_total_cell -%}
+        {#- Missing cell -#}
+        {%- block missing_lines_badge_total_cell scoped -%}
+        {{- macros.missing_lines_badge(
+          path="the whole project",
+          missing_lines_count=coverage.info.missing_lines,
+        ) -}}
+        {%- endblock missing_lines_badge_total_cell -%}
 
-      {% if branch_coverage %}
-      {#- Branches cell -#}
-      {%- block branches_badge_total_cell scoped -%}
-      {{- macros.branches_badge(
-        path="the whole project",
-        branches_count=coverage.info.num_branches,
-      ) -}}
-      {%- endblock branches_badge_total_cell -%}
+        {% if branch_coverage %}
+        {#- Branches cell -#}
+        {%- block branches_badge_total_cell scoped -%}
+        {{- macros.branches_badge(
+          path="the whole project",
+          branches_count=coverage.info.num_branches,
+        ) -}}
+        {%- endblock branches_badge_total_cell -%}
 
-      {#- Missing cell -#}
-      {%- block missing_branches_badge_total_cell scoped -%}
-      {{- macros.missing_branches_badge(
-        path="the whole project",
-        missing_branches_count=coverage.info.missing_branches,
-      ) -}}
-      {%- endblock missing_branches_badge_total_cell -%}
-      {% endif %}
+        {#- Missing cell -#}
+        {%- block missing_branches_badge_total_cell scoped -%}
+        {{- macros.missing_branches_badge(
+          path="the whole project",
+          missing_branches_count=coverage.info.missing_branches,
+        ) -}}
+        {%- endblock missing_branches_badge_total_cell -%}
+        {% endif %}
 
-      {#- Coverage rate -#}
-      {%- block coverage_rate_badge_total_cell scoped -%}
-      {{- macros.coverage_rate_badge(
-        path="the whole project",
-        percent_covered=coverage.info.percent_covered,
-        percent_covered_display=coverage.info.percent_covered_display,
-        covered_statements_count=coverage.info.covered_lines,
-        statements_count=coverage.info.num_statements,
-      ) -}}
-      {%- endblock coverage_rate_badge_total_cell -%}
+        {#- Coverage rate -#}
+        {%- block coverage_rate_badge_total_cell scoped -%}
+        {{- macros.coverage_rate_badge(
+          path="the whole project",
+          percent_covered=coverage.info.percent_covered,
+          percent_covered_display=coverage.info.percent_covered_display,
+          covered_statements_count=coverage.info.covered_lines,
+          statements_count=coverage.info.num_statements,
+        ) -}}
+        {%- endblock coverage_rate_badge_total_cell -%}
 
-      {# Coverage of added lines #}
-      {%- block diff_coverage_rate_badge_total_cell scoped -%}
-      {{- macros.diff_coverage_rate_badge(
-        path="the whole project",
-        added_statements_count=diff_coverage.total_num_lines,
-        covered_statements_count=(diff_coverage.total_num_lines-diff_coverage.total_num_violations),
-        percent_covered=diff_coverage.total_percent_covered,
-      ) -}}
-      {%- endblock diff_coverage_rate_badge_total_cell -%}
+        {# Coverage of added lines #}
+        {%- block diff_coverage_rate_badge_total_cell scoped -%}
+        {{- macros.diff_coverage_rate_badge(
+          path="the whole project",
+          added_statements_count=diff_coverage.total_num_lines,
+          covered_statements_count=(diff_coverage.total_num_lines-diff_coverage.total_num_violations),
+          percent_covered=diff_coverage.total_percent_covered,
+        ) -}}
+        {%- endblock diff_coverage_rate_badge_total_cell -%}
 
-      <td>&nbsp;</td>
-      {% if branch_coverage %}
-      <td>&nbsp;</td>
-      {% endif %}
-      </tr>
-    </tfoot>
+          <td>&nbsp;</td>
+        {% if branch_coverage %}
+          <td>&nbsp;</td>
+        {% endif %}
+  </tr>
+  </tfoot>
   </table>
 
   {%- if max_files and count_files > max_files %}
