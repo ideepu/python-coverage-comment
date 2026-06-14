@@ -3,13 +3,11 @@ import decimal
 import json
 import pathlib
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from codecov.config import Config, TestFramework
 from codecov.exceptions import ConfigurationException
 from codecov.log import log
-
-COVERAGE_HANDLER_REGISTRY: dict[TestFramework, type['BaseCoverageHandler']] = {}
 
 
 @dataclasses.dataclass
@@ -35,9 +33,10 @@ class DiffCoverage:
 
 class BaseCoverageHandler(ABC):
     TEST_FRAMEWORK: TestFramework
+    REGISTRY: ClassVar[dict[TestFramework, type['BaseCoverageHandler']]] = {}
 
     def __init_subclass__(cls) -> None:
-        COVERAGE_HANDLER_REGISTRY[cls.TEST_FRAMEWORK] = cls
+        cls.REGISTRY[cls.TEST_FRAMEWORK] = cls
         super().__init_subclass__()
 
     def convert_to_decimal(self, value: float | decimal.Decimal, precision: int = 2) -> decimal.Decimal:
@@ -86,7 +85,7 @@ class BaseCoverageHandler(ABC):
     @classmethod
     def get_coverage_handler(cls, test_framework: TestFramework) -> type['BaseCoverageHandler']:
         try:
-            return COVERAGE_HANDLER_REGISTRY[test_framework]
+            return cls.REGISTRY[test_framework]
         except KeyError as exc:
             log.error('No coverage handler found for test framework: %s', test_framework.value)
             raise ConfigurationException from exc

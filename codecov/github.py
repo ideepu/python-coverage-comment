@@ -4,21 +4,15 @@ from collections import defaultdict, deque
 
 from codecov.exceptions import (
     ApiError,
-    CannotGetBranch,
     CannotGetPullRequest,
     CannotGetUser,
     CannotPostComment,
-    Conflict,
     Forbidden,
     NotFound,
     Unauthorized,
-    ValidationFailed,
 )
 from codecov.github_client import GitHubClient
-from codecov.groups import Annotation
 from codecov.log import log
-
-COMMIT_MESSAGE = 'Update annotations data'
 
 
 @dataclasses.dataclass
@@ -29,17 +23,9 @@ class User:
 
 
 class Github:
-    def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
-        self,
-        client: GitHubClient,
-        repository: str,
-        pr_number: int | None = None,
-        ref: str | None = None,
-        annotations_data_branch: str = None,
-    ):
+    def __init__(self, client: GitHubClient, repository: str, pr_number: int | None = None, ref: str | None = None):
         self.client = client
         self.repository: str = repository
-        self.annotations_data_branch: str | None = annotations_data_branch
 
         self.user: User = self._init_user()
         self.pr_number, self.base_ref = self._init_pr_number(pr_number=pr_number, ref=ref)
@@ -187,92 +173,6 @@ class Github:
                 self.pr_number,
             )
             raise CannotPostComment from exc
-
-    def write_annotations_to_branch(self, annotations: list[Annotation]) -> None:
-        if not self.annotations_data_branch:
-            log.debug('No annotations data branch provided. Exiting.')
-            return
-
-        log.debug('Getting the annotations data branch.')
-        try:
-            data_branch = self.client.repos(self.repository).branches(self.annotations_data_branch).get()
-            if data_branch.protected:
-                log.debug('Branch "%s/%s" is protected.', self.repository, self.annotations_data_branch)
-                raise NotFound
-        except Forbidden as exc:
-            log.error(
-                'Insufficient permissions to write annotations to the branch "%s/%s". Please verify the token permissions and ensure it has content read and write access.',
-                self.repository,
-                self.annotations_data_branch,
-            )
-            raise CannotGetBranch from exc
-        except NotFound as exc:
-            log.error(
-                'Branch "%s/%s" either does not exist or is protected.', self.repository, self.annotations_data_branch
-            )
-            raise CannotGetBranch from exc
-
-        log.info('Writing annotations to branch.')
-        file_name = f'{self.pr_number}-annotations.json'
-        file_sha: str | None = None
-        try:
-            file = self.client.repos(self.repository).contents(file_name).get(ref=self.annotations_data_branch)
-            file_sha = file.sha
-        except NotFound:
-            log.debug(
-                'File "%s" does not exist in branch "%s/%s", creating new file.',
-                file_name,
-                self.repository,
-                self.annotations_data_branch,
-            )
-        except Forbidden as exc:
-            log.error(
-                'Insufficient permissions to write annotations to the branch "%s/%s". Please verify the token permissions and ensure it has content read and write access.',
-                self.repository,
-                self.annotations_data_branch,
-            )
-            raise CannotGetBranch from exc
-
-        try:
-            log.debug('Writing annotations to file to branch.')
-            encoded_content = Annotation.encode(annotations)
-            self.client.repos(self.repository).contents(file_name).put(
-                message=COMMIT_MESSAGE,
-                branch=self.annotations_data_branch,
-                sha=file_sha,
-                committer={
-                    'name': self.user.name,
-                    'email': self.user.email,
-                },
-                content=encoded_content,
-            )
-        except NotFound as exc:
-            log.error(
-                'Branch "%s/%s" either does not exist or is protected.', self.repository, self.annotations_data_branch
-            )
-            raise CannotGetBranch from exc
-        except Forbidden as exc:
-            log.error(
-                'Insufficient permissions to write annotations to the branch "%s/%s". Please verify the token permissions and ensure it has content read and write access.',
-                self.repository,
-                self.annotations_data_branch,
-            )
-            raise CannotGetBranch from exc
-        except Conflict as exc:
-            log.error(
-                'Conflict while adding #%s pull request annotation to branch "%s/%s".',
-                self.pr_number,
-                self.repository,
-                self.annotations_data_branch,
-            )
-            raise CannotGetBranch from exc
-        except ValidationFailed as exc:
-            log.error(
-                'Validation failed for committer name or email, or the endpoint was spammed while writing annotation to branch "%s/%s".',
-                self.repository,
-                self.annotations_data_branch,
-            )
-            raise CannotGetBranch from exc
 
 
 class GithubDiffParser:

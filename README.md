@@ -9,12 +9,6 @@ Permissions needed for the Github Token:
 `Pull requests:read`
 `Pull requests:write`
 
-If you have given `ANNOTATIONS_DATA_BRANCH` branch then Github Token also requires content write permissions.
-Read more on how to use this [document](./docs/annotations.md).
-
-`Contents:read`
-`Contents:write`
-
 **install:**
 
 ```bash
@@ -36,8 +30,8 @@ codecov
 - `GITHUB_REPOSITORY`: The name of the GitHub repository where the action is running.
 - `COVERAGE_PATH`: The path to the coverage report file. (JSON format)
 - `GITHUB_TOKEN`: The GitHub token used for authentication.
-- `GITHUB_PR_NUMBER`: The number of the pull request where the action is running. (Optional)
-- `GITHUB_REF`: The branch to run the action on. If not provided, it will be used to get the PR number. (Optional)
+- `GITHUB_PR_NUMBER`: The number of the pull request where the coverage report comment to be generated. (Optional)
+- `GITHUB_REF`: The branch name if pr number is not provided, it will be used to get the PR number. (Optional)
 
 Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` takes precedence if both mentioned.
 
@@ -46,9 +40,6 @@ Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` 
 - `MINIMUM_GREEN`: The minimum coverage percentage for green status. Default is 100.
 - `MINIMUM_ORANGE`: The minimum coverage percentage for orange status. Default is 70.
 - `BRANCH_COVERAGE`: Show branch coverage in the report. Default is False.
-- `SKIP_COVERAGE`: Skip coverage reporting as github comment and generate only annotaions. Default is False.
-- `ANNOTATIONS_DATA_BRANCH`: The branch to store the annotations. Read more about this [document](./docs/annotations.md).
-- `ANNOTATIONS_OUTPUT_PATH`: The path where the annotaions should be stored. Should be a path to folder.
 - `ANNOTATE_MISSING_LINES`: Whether to annotate missing lines in the coverage report. Default is False.
 - `ANNOTATION_TYPE`: The type of annotation to use for missing lines. 'notice' or 'warning' or 'error'. Default is 'warning'.
 - `MAX_FILES_IN_COMMENT`: The maximum number of files to include in the coverage report comment. Default is 25.
@@ -68,7 +59,7 @@ Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` 
    project coverage, this may be expected. For consistent results, it is recommended to enable branch
    coverage when your report includes it.
 
-## Setting up Local Environment using uv
+## Dev Setup
 
 To get started, follow these steps:
 
@@ -109,7 +100,7 @@ To get started, follow these steps:
 
 ---
 > **NOTE:**
-> This project is almost copy of
+> This project is inspired from
 > [py-cov-action/python-coverage-comment-action](<https://github.com/py-cov-action/python-coverage-comment-action.git>),
 > [LICENSE](<https://github.com/py-cov-action/python-coverage-comment-action/blob/main/LICENSE>) with few modifications.
 ---
