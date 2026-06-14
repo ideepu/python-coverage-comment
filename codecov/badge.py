@@ -1,8 +1,3 @@
-"""
-This module should contain only the things relevant to the badge being computed
-by shields.io
-"""
-
 import decimal
 import urllib.parse
 

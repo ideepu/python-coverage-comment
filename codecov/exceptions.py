@@ -18,10 +18,6 @@ class CannotGetUser(GithubBaseException):
     pass
 
 
-class CannotGetBranch(GithubBaseException):
-    pass
-
-
 class CannotPostComment(GithubBaseException):
     pass
 

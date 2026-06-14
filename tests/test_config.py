@@ -42,42 +42,37 @@ def test_config_from_environ_missing():
 def test_config_from_environ_sample():
     token = secrets.token_urlsafe()
     with tempfile.NamedTemporaryFile(suffix='.json') as temp_file:
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            assert config.Config.from_environ(
-                {
-                    'GITHUB_REPOSITORY': 'your_repository',
-                    'COVERAGE_PATH': temp_file.name,
-                    'GITHUB_TOKEN': token,
-                    'GITHUB_PR_NUMBER': '123',
-                    'GITHUB_REF': 'main',
-                    'MINIMUM_GREEN': '90',
-                    'MINIMUM_ORANGE': '70',
-                    'SKIP_COVERAGE': 'False',
-                    'ANNOTATE_MISSING_LINES': 'True',
-                    'ANNOTATION_TYPE': 'notice',
-                    'ANNOTATIONS_OUTPUT_PATH': str(tmp_dir),
-                    'MAX_FILES_IN_COMMENT': 25,
-                    'COMPLETE_PROJECT_REPORT': 'True',
-                    'COVERAGE_REPORT_URL': 'https://your_coverage_report_url',
-                    'DEBUG': 'False',
-                }
-            ) == config.Config(
-                GITHUB_REPOSITORY='your_repository',
-                COVERAGE_PATH=pathlib.Path(temp_file.name).resolve(),
-                GITHUB_TOKEN=token,  # noqa: S106
-                GITHUB_PR_NUMBER=123,
-                GITHUB_REF='main',
-                MINIMUM_GREEN=decimal.Decimal('90'),
-                MINIMUM_ORANGE=decimal.Decimal('70'),
-                SKIP_COVERAGE=False,
-                ANNOTATE_MISSING_LINES=True,
-                ANNOTATION_TYPE=config.AnnotationType.NOTICE,
-                ANNOTATIONS_OUTPUT_PATH=pathlib.Path(tmp_dir),
-                MAX_FILES_IN_COMMENT=25,
-                COMPLETE_PROJECT_REPORT=True,
-                COVERAGE_REPORT_URL='https://your_coverage_report_url',
-                DEBUG=False,
-            )
+        assert config.Config.from_environ(
+            {
+                'GITHUB_REPOSITORY': 'your_repository',
+                'COVERAGE_PATH': temp_file.name,
+                'GITHUB_TOKEN': token,
+                'GITHUB_PR_NUMBER': '123',
+                'GITHUB_REF': 'main',
+                'MINIMUM_GREEN': '90',
+                'MINIMUM_ORANGE': '70',
+                'ANNOTATE_MISSING_LINES': 'True',
+                'ANNOTATION_TYPE': 'notice',
+                'MAX_FILES_IN_COMMENT': 25,
+                'COMPLETE_PROJECT_REPORT': 'True',
+                'COVERAGE_REPORT_URL': 'https://your_coverage_report_url',
+                'DEBUG': 'False',
+            }
+        ) == config.Config(
+            GITHUB_REPOSITORY='your_repository',
+            COVERAGE_PATH=pathlib.Path(temp_file.name).resolve(),
+            GITHUB_TOKEN=token,  # noqa: S106
+            GITHUB_PR_NUMBER=123,
+            GITHUB_REF='main',
+            MINIMUM_GREEN=decimal.Decimal('90'),
+            MINIMUM_ORANGE=decimal.Decimal('70'),
+            ANNOTATE_MISSING_LINES=True,
+            ANNOTATION_TYPE=config.AnnotationType.NOTICE,
+            MAX_FILES_IN_COMMENT=25,
+            COMPLETE_PROJECT_REPORT=True,
+            COVERAGE_REPORT_URL='https://your_coverage_report_url',
+            DEBUG=False,
+        )
 
 
 def test_config_required_pr_or_ref():
@@ -130,11 +125,6 @@ def test_config_clean_annotate_missing_lines():
     assert value is True
 
 
-def test_config_clean_skip_coverage():
-    value = config.Config.clean_skip_coverage('False')
-    assert value is False
-
-
 def test_config_clean_branch_coverage():
     value = config.Config.clean_branch_coverage('False')
     assert value is False
@@ -174,15 +164,6 @@ def test_config_clean_coverage_path():
     with tempfile.NamedTemporaryFile(suffix='.json') as temp_file:
         value = config.Config.clean_coverage_path(temp_file.name)
         assert value == pathlib.Path(temp_file.name).resolve()
-
-
-def test_config_clean_annotations_output_path():
-    with tempfile.TemporaryDirectory() as temp_dir:
-        value = config.Config.clean_annotations_output_path(temp_dir)
-        assert value == pathlib.Path(temp_dir)
-
-    with pytest.raises(ValueError):
-        config.Config.clean_annotations_output_path('/path/to/nonexistent_dir')
 
 
 def test_str_to_bool_invalid():

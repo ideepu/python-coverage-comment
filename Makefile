@@ -1,8 +1,8 @@
 SHELL := /bin/bash
 
-.PHONY: setup install install-dev lint test run clean-setup clean-lint all clean
+.PHONY: setup install dev lint test run clean-setup clean-lint all clean
 
-setup: install-dev
+setup: dev
 	uv run pre-commit install
 	uv run pre-commit install --hook-type commit-msg
 

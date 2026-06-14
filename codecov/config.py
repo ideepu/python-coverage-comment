@@ -53,11 +53,8 @@ class Config:
     TEST_FRAMEWORK: TestFramework = TestFramework.PYTEST
     # TODO: Remove branch coverage and just use the report
     BRANCH_COVERAGE: bool = False
-    SKIP_COVERAGE: bool = False  # Deprecated
     ANNOTATE_MISSING_LINES: bool = False
     ANNOTATION_TYPE: AnnotationType = AnnotationType.WARNING
-    ANNOTATIONS_OUTPUT_PATH: pathlib.Path | None = None
-    ANNOTATIONS_DATA_BRANCH: str | None = None
     MAX_FILES_IN_COMMENT: int = 25
     SKIP_COVERED_FILES_IN_REPORT: bool = True
     COMPLETE_PROJECT_REPORT: bool = False
@@ -68,12 +65,6 @@ class Config:
     def __post_init__(self) -> None:
         if self.GITHUB_PR_NUMBER is None and self.GITHUB_REF is None:
             raise ValueError('Either GITHUB_PR_NUMBER or GITHUB_REF must be provided')
-
-        if self.SKIP_COVERAGE and not self.ANNOTATE_MISSING_LINES:
-            raise ValueError(
-                'No action taken as both SKIP_COVERAGE and ANNOTATE_MISSING_LINES are set to False. \
-                Neither comments nor annotations will be generated.'
-            )
 
     # Clean methods
     @classmethod
@@ -86,10 +77,6 @@ class Config:
 
     @classmethod
     def clean_annotate_missing_lines(cls, value: str) -> bool:
-        return str_to_bool(value)
-
-    @classmethod
-    def clean_skip_coverage(cls, value: str) -> bool:
         return str_to_bool(value)
 
     @classmethod
@@ -123,13 +110,6 @@ class Config:
     @classmethod
     def clean_coverage_path(cls, value: str) -> pathlib.Path:
         return resolve_path(value)
-
-    @classmethod
-    def clean_annotations_output_path(cls, value: str) -> pathlib.Path:
-        path = pathlib.Path(value)
-        if path.exists() or path.is_dir():
-            return path
-        raise ValueError
 
     @classmethod
     def clean_test_framework(cls, value: str) -> TestFramework:

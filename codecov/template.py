@@ -225,7 +225,7 @@ def get_file_url(  # pylint: disable=too-many-arguments
     s = f'https://github.com/{repo_name}/pull/{pr_number}/files#diff-{hashlib.sha256(str(filename).encode("utf-8")).hexdigest()}'
 
     if lines is not None:
-        # R stands for Right side of the diff. But since we generate these links for new code we only need the right side.
+        # R stands for Right side of the diff. Since we generate these links for new code, we only need the right side.
         s += f'R{lines[0]}-R{lines[1]}'
 
     return s

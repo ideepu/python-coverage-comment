@@ -1,4 +1,3 @@
-import json
 import os
 from typing import cast
 
@@ -37,7 +36,6 @@ class Main:
             repository=self.config.GITHUB_REPOSITORY,
             pr_number=self.config.GITHUB_PR_NUMBER,
             ref=self.config.GITHUB_REF,
-            annotations_data_branch=self.config.ANNOTATIONS_DATA_BRANCH,
         )
         return github
 
@@ -50,7 +48,6 @@ class Main:
 
     def run(self):
         self._process_coverage()
-        self._render_comment_markdown()
         self._create_comment()
         self._generate_annotations()
 
@@ -73,11 +70,7 @@ class Main:
             log.error('Error parsing the coverage file. Please check the file and try again.')
             raise CoreProcessingException from e
 
-    def _render_comment_markdown(self) -> None:
-        if self.config.SKIP_COVERAGE:
-            log.info('Skipping coverage report generation.')
-            return
-
+    def _create_comment(self) -> None:
         log.info('Generating comment for PR #%s', self.github.pr_number)
         diff_files_info, diff_count_files = template.select_changed_files(
             coverage=self.coverage,
@@ -124,14 +117,11 @@ class Main:
             )
             raise CoreProcessingException from e
 
-        self.comment = comment
-
-    def _create_comment(self):
-        if not self.comment:
+        if not comment:
             log.error('Failed to generate comment, rendered template is empty.')
             raise CoreProcessingException
 
-        self.github.post_comment(contents=self.comment, marker=self.marker)
+        self.github.post_comment(contents=comment, marker=self.marker)
         log.info('Comment created on PR.')
 
     def _generate_annotations(self):
@@ -170,16 +160,3 @@ class Main:
         print(yellow, end='')
         print(*formatted_annotations, sep='\n')
         print(reset, end='')
-
-        # Save to file
-        file_name = f'{self.github.pr_number}-annotations.json'
-        if self.config.ANNOTATIONS_OUTPUT_PATH:
-            log.info('Writing annotations to file %s', file_name)
-            with self.config.ANNOTATIONS_OUTPUT_PATH.joinpath(file_name).open('w+') as annotations_file:
-                json.dump(formatted_annotations, annotations_file, cls=groups.AnnotationEncoder)
-
-        # Write to branch
-        if self.config.ANNOTATIONS_DATA_BRANCH:
-            log.info('Writing annotations to branch.')
-            self.github.write_annotations_to_branch(annotations=formatted_annotations)
-        log.info('Annotations generated.')

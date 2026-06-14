@@ -1,9 +1,8 @@
-import json
 import pathlib
 
 import pytest
 
-from codecov.groups import Annotation, AnnotationEncoder, Group, create_missing_coverage_annotations
+from codecov.groups import Annotation, Group, create_missing_coverage_annotations
 
 
 def test_annotation_str():
@@ -38,69 +37,6 @@ def test_annotation_to_dict():
         'message': 'Something went wrong',
     }
     assert annotation.to_dict() == expected_dict
-
-
-def test_annotation_encode():
-    file = pathlib.Path('/path/to/file.py')
-    annotation = Annotation(
-        file=file,
-        line_start=10,
-        line_end=15,
-        title='Error',
-        message_type='ERROR',
-        message='Something went wrong',
-    )
-    assert isinstance(Annotation.encode([annotation]), str)
-
-
-def test_annotation_encoder_annotation():
-    encoder = AnnotationEncoder()
-    annotation = Annotation(
-        file='/path/to/file.py',
-        line_start=10,
-        line_end=15,
-        title='Error',
-        message_type='ERROR',
-        message='Something went wrong',
-    )
-    expected_dict = {
-        'file': '/path/to/file.py',
-        'line_start': 10,
-        'line_end': 15,
-        'title': 'Error',
-        'message_type': 'ERROR',
-        'message': 'Something went wrong',
-    }
-    result = encoder.default(annotation)
-    assert result == expected_dict
-
-
-def test_annotation_encoder_json():
-    annotation = Annotation(
-        file=pathlib.Path('/path/to/file.py'),
-        line_start=10,
-        line_end=15,
-        title='Error',
-        message_type='ERROR',
-        message='Something went wrong',
-    )
-    expected_json = '{"file": "/path/to/file.py", "line_start": 10, "line_end": 15, "title": "Error", "message_type": "ERROR", "message": "Something went wrong"}'
-    result = json.dumps(annotation, cls=AnnotationEncoder)
-    assert result == expected_json
-
-
-def test_non_annotation_encoder():
-    sample = {
-        'file': 'test_file',
-        'line_start': 1,
-        'line_end': 2,
-        'title': 'Test Annotation',
-        'message_type': 'warning',
-        'message': 'This is a test annotation.',
-    }
-
-    with pytest.raises(TypeError):
-        AnnotationEncoder().default(sample)
 
 
 @pytest.mark.parametrize(

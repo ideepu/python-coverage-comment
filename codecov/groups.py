@@ -1,11 +1,8 @@
-import base64
 import dataclasses
 import functools
 import itertools
-import json
 import pathlib
 from collections.abc import Iterable
-from typing import Self
 
 
 @dataclasses.dataclass(frozen=True)
@@ -13,13 +10,6 @@ class Group:
     file: pathlib.Path
     line_start: int
     line_end: int
-
-
-class AnnotationEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, Annotation):
-            return o.to_dict()
-        return super().default(o)
 
 
 @dataclasses.dataclass
@@ -46,10 +36,6 @@ class Annotation:
             'message_type': self.message_type,
             'message': self.message,
         }
-
-    @classmethod
-    def encode(cls, annotations: list[Self]) -> str:
-        return base64.b64encode(json.dumps(annotations, cls=AnnotationEncoder).encode()).decode()
 
 
 def create_missing_coverage_annotations(
