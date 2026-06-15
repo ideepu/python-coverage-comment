@@ -4,22 +4,6 @@
     <td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ '' | generate_badge(message=(statements_count | string), color=color) }}"></a></td>
 {%- endmacro -%}
 
-{%- macro branches_badge(path, branches_count, base=false) -%}
-    {% set text = "The "  ~ path ~ " contains " ~ branches_count ~ " branch" ~ (branches_count | pluralize(plural='es')) ~"." -%}
-    {% set color = "008080" -%}
-    <td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ '' | generate_badge(message=(branches_count | string), color=color) }}"></a></td>
-{%- endmacro -%}
-
-{%- macro missing_branches_badge(path, missing_branches_count, base=false) -%}
-    {%- set text = missing_branches_count ~ " branch" ~ (missing_branches_count | pluralize(plural='es')) ~ " missing the coverage in " ~ path ~ "." -%}
-    {% if missing_branches_count == 0 -%}
-        {%- set color = "brightgreen" -%}
-    {% else -%}
-        {%- set color = "red" -%}
-    {% endif -%}
-    <td align="center"><a href="{{ path | file_url(base=base) }}"><img title="{{ text }}" src="{{ '' | generate_badge(message=(missing_branches_count | string), color=color) }}"></a></td>
-{%- endmacro -%}
-
 {%- macro missing_lines_badge(path, missing_lines_count, base=false) -%}
     {%- set text = missing_lines_count ~ " statement" ~ (statements_count | pluralize) ~ " missing the coverage in " ~ path ~ "." -%}
     {% if missing_lines_count == 0 -%}

@@ -51,8 +51,6 @@ class Config:
     MINIMUM_GREEN: decimal.Decimal = decimal.Decimal('100')
     MINIMUM_ORANGE: decimal.Decimal = decimal.Decimal('70')
     TEST_FRAMEWORK: TestFramework = TestFramework.PYTEST
-    # TODO: Remove branch coverage and just use the report
-    BRANCH_COVERAGE: bool = False
     ANNOTATE_MISSING_LINES: bool = False
     ANNOTATION_TYPE: AnnotationType = AnnotationType.WARNING
     MAX_FILES_IN_COMMENT: int = 25
@@ -76,10 +74,6 @@ class Config:
 
     @classmethod
     def clean_annotate_missing_lines(cls, value: str) -> bool:
-        return str_to_bool(value)
-
-    @classmethod
-    def clean_branch_coverage(cls, value: str) -> bool:
         return str_to_bool(value)
 
     @classmethod

@@ -1,6 +1,5 @@
 # mypy: disable-error-code="operator, union-attr"
 
-import dataclasses
 import datetime
 import decimal
 import functools
@@ -20,6 +19,7 @@ from codecov.coverage.pytest import (
     PytestCoverageInfo,
     PytestCoverageMetadata,
     PytestFileCoverage,
+    _incorporate_branch_missing,
 )
 from codecov.github_client import GitHubClient
 
@@ -39,14 +39,13 @@ def test_config() -> Config:
 
 
 @pytest.fixture
-def make_coverage() -> Callable[[str, bool], PytestCoverage]:
-    def _(code: str, has_branches: bool = True) -> PytestCoverage:
+def make_coverage() -> Callable[[str], PytestCoverage]:
+    def _(code: str) -> PytestCoverage:
         current_file = None
         coverage_obj = PytestCoverage(
             meta=PytestCoverageMetadata(
                 version='1.2.3',
                 timestamp=datetime.datetime(2000, 1, 1),
-                branch_coverage=True,
                 show_contexts=False,
             ),
             info=PytestCoverageInfo(
@@ -56,10 +55,6 @@ def make_coverage() -> Callable[[str, bool], PytestCoverage]:
                 percent_covered_display='100',
                 missing_lines=0,
                 excluded_lines=0,
-                num_branches=0 if has_branches else None,
-                num_partial_branches=0 if has_branches else None,
-                covered_branches=0 if has_branches else None,
-                missing_branches=0 if has_branches else None,
             ),
             files={},
         )
@@ -88,13 +83,7 @@ def make_coverage() -> Callable[[str, bool], PytestCoverage]:
                         percent_covered_display='100',
                         missing_lines=0,
                         excluded_lines=0,
-                        num_branches=0 if has_branches else None,
-                        num_partial_branches=0 if has_branches else None,
-                        covered_branches=0 if has_branches else None,
-                        missing_branches=0 if has_branches else None,
                     ),
-                    executed_branches=[],
-                    missing_branches=[],
                 )
             if any(
                 x in line
@@ -122,22 +111,19 @@ def make_coverage() -> Callable[[str, bool], PytestCoverage]:
                 coverage_obj.files[current_file].info.excluded_lines += 1
                 coverage_obj.info.excluded_lines += 1
 
-            if has_branches and 'branch' in line:
-                coverage_obj.files[current_file].info.num_branches += 1
-                coverage_obj.info.num_branches += 1
-                coverage_obj.files[current_file].executed_branches.append([line_number, line_number + 1])
-                if 'branch partial' in line:
-                    # Even if it's partially covered, it's still considered as a missing branch
-                    coverage_obj.files[current_file].missing_branches.append([line_number, line_number + 1])
-                    coverage_obj.files[current_file].info.num_partial_branches += 1
-                    coverage_obj.info.num_partial_branches += 1
-                elif 'branch covered' in line:
-                    coverage_obj.files[current_file].info.covered_branches += 1
-                    coverage_obj.info.covered_branches += 1
-                elif 'branch missing' in line:
-                    coverage_obj.files[current_file].missing_branches.append([line_number, line_number + 1])
-                    coverage_obj.files[current_file].info.missing_branches += 1
-                    coverage_obj.info.missing_branches += 1
+            if 'branch' in line:
+                branch_missing = None
+                if 'branch partial' in line or 'branch missing' in line:
+                    branch_missing = [[line_number, line_number + 1]]
+                covered_lines, missing_lines = _incorporate_branch_missing(
+                    covered_lines=coverage_obj.files[current_file].covered_lines,
+                    missing_lines=coverage_obj.files[current_file].missing_lines,
+                    missing_branches=branch_missing,
+                )
+                coverage_obj.files[current_file].covered_lines = covered_lines
+                coverage_obj.files[current_file].missing_lines = missing_lines
+                coverage_obj.files[current_file].info.covered_lines = len(covered_lines)
+                coverage_obj.files[current_file].info.missing_lines = len(missing_lines)
 
             info = coverage_obj.files[current_file].info
             coverage_obj.files[current_file].info.percent_covered = PytestCoverageHandler().compute_coverage(
@@ -163,9 +149,8 @@ def make_coverage() -> Callable[[str, bool], PytestCoverage]:
 def make_diff_coverage(test_config):
     handler = PytestCoverageHandler()
 
-    def _(added_lines, coverage, branch_coverage=False):
-        config = dataclasses.replace(test_config, BRANCH_COVERAGE=branch_coverage)
-        return handler.get_diff_coverage(added_lines=added_lines, coverage=coverage, config=config)
+    def _(added_lines, coverage):
+        return handler.get_diff_coverage(added_lines=added_lines, coverage=coverage, config=test_config)
 
     return _
 

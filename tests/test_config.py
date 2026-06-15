@@ -125,11 +125,6 @@ def test_config_clean_annotate_missing_lines():
     assert value is True
 
 
-def test_config_clean_branch_coverage():
-    value = config.Config.clean_branch_coverage('False')
-    assert value is False
-
-
 def test_config_clean_complete_project_report():
     value = config.Config.clean_complete_project_report('True')
     assert value is True
