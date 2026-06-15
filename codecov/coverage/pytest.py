@@ -5,7 +5,7 @@ import pathlib
 
 from codecov import diff_grouper
 from codecov.config import Config, TestFramework
-from codecov.coverage.base import BaseCoverageHandler, DiffCoverage, FileDiffCoverage
+from codecov.coverage.base import BaseCoverage, BaseCoverageHandler, DiffCoverage, FileDiffCoverage
 
 
 @dataclasses.dataclass
@@ -42,13 +42,13 @@ class PytestCoverageMetadata:
 
 
 @dataclasses.dataclass
-class PytestCoverage:
+class PytestCoverage(BaseCoverage):
     info: PytestCoverageInfo
     files: dict[pathlib.Path, PytestFileCoverage]
     meta: PytestCoverageMetadata
 
 
-class PytestCoverageHandler(BaseCoverageHandler):
+class PytestCoverageHandler(BaseCoverageHandler[PytestCoverage]):
     TEST_FRAMEWORK: TestFramework = TestFramework.PYTEST
 
     def compute_coverage(
@@ -97,7 +97,6 @@ class PytestCoverageHandler(BaseCoverageHandler):
             info=self.extract_coverage_info(file_data['summary']),
         )
 
-    # TODO: Fix the typing of data
     def extract_info(self, data: dict) -> PytestCoverage:
         """
         {

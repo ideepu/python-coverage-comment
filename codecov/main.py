@@ -39,9 +39,9 @@ class Main:
         )
         return github
 
-    def _init_coverage_module(self) -> BaseCoverageHandler:
+    def _init_coverage_module(self):
         try:
-            return BaseCoverageHandler.get_coverage_handler(test_framework=self.config.TEST_FRAMEWORK)()
+            return BaseCoverageHandler.get_coverage_handler(test_framework=self.config.TEST_FRAMEWORK)
         except ConfigurationException as e:
             log.error('Error initializing coverage module. Please check the test framework and try again.')
             raise CoreProcessingException from e

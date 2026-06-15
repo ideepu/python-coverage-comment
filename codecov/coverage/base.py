@@ -3,11 +3,15 @@ import decimal
 import json
 import pathlib
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar, cast
 
 from codecov.config import Config, TestFramework
 from codecov.exceptions import ConfigurationException
 from codecov.log import log
+
+if TYPE_CHECKING:
+    from codecov.coverage.jest import JestCoverage
+    from codecov.coverage.pytest import PytestCoverage
 
 
 @dataclasses.dataclass
@@ -31,13 +35,20 @@ class DiffCoverage:
     files: dict[pathlib.Path, FileDiffCoverage]
 
 
-class BaseCoverageHandler(ABC):
+class BaseCoverage:
+    pass
+
+
+T = TypeVar('T', bound=BaseCoverage)
+
+
+class BaseCoverageHandler(ABC, Generic[T]):
     TEST_FRAMEWORK: TestFramework
-    REGISTRY: ClassVar[dict[TestFramework, type['BaseCoverageHandler']]] = {}
+    REGISTRY: ClassVar[dict[TestFramework, type['BaseCoverageHandler[Any]']]] = {}
 
     def __init_subclass__(cls) -> None:
-        cls.REGISTRY[cls.TEST_FRAMEWORK] = cls
         super().__init_subclass__()
+        BaseCoverageHandler.REGISTRY[cls.TEST_FRAMEWORK] = cls
 
     def convert_to_decimal(self, value: float | decimal.Decimal, precision: int = 2) -> decimal.Decimal:
         if not isinstance(value, decimal.Decimal):
@@ -47,8 +58,8 @@ class BaseCoverageHandler(ABC):
             rounding=decimal.ROUND_DOWN,
         )
 
-    # TODO: Fix the typing and rename this to get_coverage_json
-    def get_coverage_info(self, coverage_path: pathlib.Path) -> Any:
+    def get_coverage(self, config: Config) -> T:
+        coverage_path = config.COVERAGE_PATH
         try:
             with coverage_path.open() as coverage_data:
                 json_coverage = json.loads(coverage_data.read())
@@ -59,7 +70,6 @@ class BaseCoverageHandler(ABC):
             log.error('Invalid JSON format in coverage report file: %s', coverage_path)
             raise ConfigurationException from exc
 
-        # TODO: Move the below code to a separate function
         try:
             return self.extract_info(data=json_coverage)
         except KeyError as exc:
@@ -67,25 +77,28 @@ class BaseCoverageHandler(ABC):
             raise ConfigurationException from exc
 
     @abstractmethod
-    def extract_info(self, data: dict) -> Any:
+    def extract_info(self, data: dict) -> T:
         raise NotImplementedError  # pragma: no cover
-
-    def get_coverage(self, config: Config) -> Any:
-        return self.get_coverage_info(coverage_path=config.COVERAGE_PATH)
 
     @abstractmethod
     def get_diff_coverage(
         self,
         added_lines: dict[pathlib.Path, list[int]],
-        coverage: Any,
+        coverage: T,
         config: Config,
     ) -> DiffCoverage:
         raise NotImplementedError  # pragma: no cover
 
     @classmethod
-    def get_coverage_handler(cls, test_framework: TestFramework) -> type['BaseCoverageHandler']:
+    def get_coverage_handler(
+        cls,
+        test_framework: TestFramework,
+    ) -> 'BaseCoverageHandler[PytestCoverage | JestCoverage]':
         try:
-            return cls.REGISTRY[test_framework]
+            return cast(
+                'BaseCoverageHandler[PytestCoverage | JestCoverage]',
+                cls.REGISTRY[test_framework](),
+            )
         except KeyError as exc:
             log.error('No coverage handler found for test framework: %s', test_framework.value)
             raise ConfigurationException from exc

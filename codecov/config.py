@@ -59,7 +59,6 @@ class Config:
     SKIP_COVERED_FILES_IN_REPORT: bool = True
     COMPLETE_PROJECT_REPORT: bool = False
     COVERAGE_REPORT_URL: str | None = None
-    # TODO: Change this to LOG_LEVEL. INFO; DEBUG; NONE;
     DEBUG: bool = False
 
     def __post_init__(self) -> None:

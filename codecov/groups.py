@@ -70,7 +70,6 @@ def create_missing_coverage_annotations(
     return formatted_annotations
 
 
-# TODO: Write tests for this function
 def compute_contiguous_groups(
     values: list[int],
     separators: set[int],

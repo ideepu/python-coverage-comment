@@ -3,7 +3,7 @@ import decimal
 import pathlib
 
 from codecov.config import Config, TestFramework
-from codecov.coverage.base import BaseCoverageHandler, DiffCoverage, FileDiffCoverage
+from codecov.coverage.base import BaseCoverage, BaseCoverageHandler, DiffCoverage, FileDiffCoverage
 
 
 @dataclasses.dataclass
@@ -29,12 +29,12 @@ class JestFileCoverage:
 
 
 @dataclasses.dataclass
-class JestCoverage:
+class JestCoverage(BaseCoverage):
     info: JestCoverageInfo
     files: dict[pathlib.Path, JestFileCoverage]
 
 
-class JestCoverageHandler(BaseCoverageHandler):
+class JestCoverageHandler(BaseCoverageHandler[JestCoverage]):
     TEST_FRAMEWORK: TestFramework = TestFramework.JEST
 
     """
