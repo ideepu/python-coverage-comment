@@ -26,20 +26,23 @@ class TestBase:
     def test_compute_coverage(self, num_covered, num_total, expected_coverage):
         assert PytestCoverageHandler().compute_coverage(num_covered, num_total) == decimal.Decimal(expected_coverage)
 
-    def test_get_coverage_info(self, coverage_json):
+    def test_get_coverage_info(self, test_config, coverage_json):
         handler = PytestCoverageHandler()
         with patch('pathlib.Path.open') as mock_open:
             mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_json)
-            result = handler.get_coverage_info(pathlib.Path(tempfile.mkstemp(suffix='.json')[1]))
+            test_config.COVERAGE_PATH = pathlib.Path(tempfile.mkstemp(suffix='.json')[1])
+            result = handler.get_coverage(config=test_config)
             assert result == handler.extract_info(coverage_json)
 
         with patch('pathlib.Path.open') as mock_open:
             mock_open.return_value.__enter__.return_value.read.return_value = b'invalid json'
             with pytest.raises(ConfigurationException):
-                handler.get_coverage_info(pathlib.Path(tempfile.mkstemp(suffix='.json')[1]))
+                test_config.COVERAGE_PATH = pathlib.Path(tempfile.mkstemp(suffix='.json')[1])
+                handler.get_coverage(config=test_config)
 
         with pytest.raises(ConfigurationException):
-            handler.get_coverage_info(pathlib.Path('path/to/file.json'))
+            test_config.COVERAGE_PATH = pathlib.Path('path/to/file.json')
+            handler.get_coverage(config=test_config)
 
     @pytest.mark.parametrize(
         'added_lines, update_obj, expected',
