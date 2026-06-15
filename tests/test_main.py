@@ -57,20 +57,6 @@ class TestMain:
                     config=test_config,
                 )
 
-    def test_process_coverage_branch_coverage(self, test_config, gh, coverage_obj, diff_coverage_obj):
-        with patch.object(Main, '_init_config', return_value=test_config):
-            test_config.BRANCH_COVERAGE = True
-            with patch.object(Main, '_init_github', return_value=gh):
-                main = Main()
-                main.coverage_module = MagicMock()
-                main.coverage_module.get_coverage = MagicMock(return_value=coverage_obj)
-                main.coverage_module.get_diff_coverage = MagicMock(return_value=diff_coverage_obj)
-
-                assert main._process_coverage() is None
-
-                assert main.coverage == coverage_obj
-                assert main.diff_coverage == diff_coverage_obj
-
     @patch('codecov.main.template.get_comment_markdown')
     def test_create_comment(
         self,
@@ -145,28 +131,10 @@ class TestMain:
                 main.diff_coverage = diff_coverage_obj
                 assert main._generate_annotations() is None
 
-        with patch.object(Main, '_init_config', return_value=test_config):
-            with patch.object(Main, '_init_github', return_value=gh):
-                main = Main()
-                main.config.ANNOTATE_MISSING_LINES = True
-                main.config.BRANCH_COVERAGE = True
-                main.coverage = coverage_obj
-                main.diff_coverage = diff_coverage_obj
-                assert main._generate_annotations() is None
-
     def test_generate_annotations(self, test_config, gh, coverage_obj, diff_coverage_obj):
         with patch.object(Main, '_init_config', return_value=test_config):
             with patch.object(Main, '_init_github', return_value=gh):
                 main = Main()
-                main.config.ANNOTATE_MISSING_LINES = True
-                main.coverage = coverage_obj
-                main.diff_coverage = diff_coverage_obj
-                assert main._generate_annotations() is None
-
-        with patch.object(Main, '_init_config', return_value=test_config):
-            with patch.object(Main, '_init_github', return_value=gh):
-                main = Main()
-                main.config.BRANCH_COVERAGE = True
                 main.config.ANNOTATE_MISSING_LINES = True
                 main.coverage = coverage_obj
                 main.diff_coverage = diff_coverage_obj

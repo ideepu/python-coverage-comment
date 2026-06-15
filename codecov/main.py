@@ -1,5 +1,4 @@
 import os
-from typing import cast
 
 from codecov import diff_grouper, groups, template
 from codecov.config import Config
@@ -95,7 +94,6 @@ class Main:
                 self.github.pr_number,
                 self.github.base_ref,
                 self.marker,
-                branch_coverage=self.config.BRANCH_COVERAGE,
                 complete_project_report=self.config.COMPLETE_PROJECT_REPORT,
                 coverage_report_url=self.config.COVERAGE_REPORT_URL,
                 max_files=self.config.MAX_FILES_IN_COMMENT,
@@ -135,19 +133,6 @@ class Main:
             annotation_type=self.config.ANNOTATION_TYPE.value,
             annotations=annotations,
         )
-
-        if self.config.BRANCH_COVERAGE:
-            branch_annotations = diff_grouper.get_diff_branch_missing_groups(
-                coverage=cast(PytestCoverage, self.coverage),
-                diff_coverage=self.diff_coverage,
-            )
-            formatted_annotations.extend(
-                groups.create_missing_coverage_annotations(
-                    annotation_type=self.config.ANNOTATION_TYPE.value,
-                    annotations=branch_annotations,
-                    branch=True,
-                )
-            )
 
         if not formatted_annotations:
             log.info('No annotations to generate. Exiting.')

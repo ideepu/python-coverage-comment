@@ -11,20 +11,6 @@ if TYPE_CHECKING:
 MAX_ANNOTATION_GAP = 3
 
 
-def _flatten_branches(branches: list[list[int]] | None) -> list[int]:
-    flattened_branches: list[int] = []
-    if not branches:
-        return flattened_branches
-
-    for branch in branches:
-        start, end = abs(branch[0]), abs(branch[1])
-        if start == end:
-            flattened_branches.append(start)
-        else:
-            flattened_branches.extend(range(min(start, end), max(start, end) + 1))
-    return flattened_branches
-
-
 def get_missing_groups(
     coverage: 'PytestCoverage | JestCoverage',
 ) -> Iterable[groups.Group]:
@@ -72,40 +58,6 @@ def get_diff_missing_groups(
             joiners=joiners,
             max_gap=MAX_ANNOTATION_GAP,
         ):
-            yield groups.Group(
-                file=path,
-                line_start=start,
-                line_end=end,
-            )
-
-
-def fill_branch_missing_groups(coverage: 'PytestCoverage') -> 'PytestCoverage':
-    for file_coverage in coverage.files.values():
-        separators = {
-            *_flatten_branches(file_coverage.executed_branches),
-            *file_coverage.excluded_lines,
-        }
-        joiners = set(range(1, file_coverage.info.num_statements)) - separators
-
-        file_coverage.missing_branches = [
-            [start, end]
-            for start, end in groups.compute_contiguous_groups(
-                values=_flatten_branches(branches=file_coverage.missing_branches),
-                separators=separators,
-                joiners=joiners,
-                max_gap=MAX_ANNOTATION_GAP,
-            )
-        ]
-    return coverage
-
-
-def get_diff_branch_missing_groups(
-    coverage: 'PytestCoverage',
-    diff_coverage: 'DiffCoverage',
-) -> Iterable[groups.Group]:
-    for path, _ in diff_coverage.files.items():
-        coverage_file = coverage.files[path]
-        for start, end in coverage_file.missing_branches or []:
             yield groups.Group(
                 file=path,
                 line_start=start,

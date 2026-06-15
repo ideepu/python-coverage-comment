@@ -41,28 +41,26 @@ class Annotation:
 def create_missing_coverage_annotations(
     annotation_type: str,
     annotations: Iterable[Group],
-    branch: bool = False,
 ) -> list[Annotation]:
     """
     Create annotations for lines with missing coverage.
 
     annotation_type: The type of annotation to create. Can be either "error" or "warning" or "notice".
     annotations: A list of tuples of the form (file, line_start, line_end)
-    branch: Whether to create branch coverage annotations or not
     """
     formatted_annotations: list[Annotation] = []
     for group in annotations:
         if group.line_start == group.line_end:
-            message = f'Missing {"branch " if branch else ""}coverage on line {group.line_start}'
+            message = f'Missing coverage on line {group.line_start}'
         else:
-            message = f'Missing {"branch " if branch else ""}coverage on lines {group.line_start}-{group.line_end}'
+            message = f'Missing coverage on lines {group.line_start}-{group.line_end}'
 
         formatted_annotations.append(
             Annotation(
                 file=group.file,
                 line_start=group.line_start,
                 line_end=group.line_end,
-                title=f'Missing {"branch " if branch else ""}coverage',
+                title='Missing coverage',
                 message_type=annotation_type,
                 message=message,
             )

@@ -6,16 +6,15 @@
   <br>
   <table>
     <thead>
-      <tr><th>File</th><th>Statements</th><th>Missing</th>{% if branch_coverage %}<th>Branches</th><th>Missing</th>{% endif %}
+      <tr><th>File</th><th>Statements</th><th>Missing</th>
       <th><br>Coverage &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</th><th>Coverage &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<br>(new stmts)</th>
-      <th><br>Missing stmts &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</th>
-      {% if branch_coverage %}<th><br>Missing branches &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</th>{% endif %}</tr>
+      <th><br>Missing stmts &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</th></tr>
     </thead>
     <tbody>
 
       {%- for parent, files_in_folder in files|groupby(attribute="path.parent") -%}
       <tr>
-        <td colspan="{%if branch_coverage%}9{% else -%}6{% endif %}">&nbsp;&nbsp;<b>{{ parent }}</b></td>
+        <td colspan="6">&nbsp;&nbsp;<b>{{ parent }}</b></td>
       </tr>
 
       {%- for file in files_in_folder -%}
@@ -38,24 +37,6 @@
         missing_lines_count=file.coverage.info.missing_lines,
       ) -}}
       {%- endblock missing_lines_badge_cell -%}
-
-      {% if branch_coverage %}
-      {#- Branches cell -#}
-      {%- block branches_badge_cell scoped -%}
-      {{- macros.branches_badge(
-        path=path,
-        branches_count=file.coverage.info.num_branches,
-      ) -}}
-      {%- endblock branches_badge_cell -%}
-
-      {#- Missing cell -#}
-      {%- block missing_branches_badge_cell scoped -%}
-      {{- macros.missing_branches_badge(
-        path=path,
-        missing_branches_count=file.coverage.info.missing_branches,
-      ) -}}
-      {%- endblock missing_branches_badge_cell -%}
-      {% endif %}
 
       {#- Coverage rate -#}
       {%- block coverage_rate_badge_cell scoped -%}
@@ -98,19 +79,6 @@
       </td>
 
       {%- endblock link_to_missing_diff_lines_cell -%}
-
-      {#- Link to branch missing lines -#}
-      {%- if branch_coverage -%}
-      {%- block link_to_branches_missing_lines_cell scoped -%}
-      <td>
-      {%- set comma = joiner() -%}
-      {%- for branch in file.coverage.missing_branches -%}
-      {{- comma() -}}
-      <a href="{{ path | file_url(lines=(branch[0] | abs, branch[1] | abs))}}">{{- branch[0] | abs -}} -> {{- branch[1] | abs -}}</a>
-      {%- endfor -%}
-      </td>
-      {%- endblock link_to_branches_missing_lines_cell -%}
-      {%- endif -%}
       </tr>
 
       {%- endfor -%}
@@ -137,24 +105,6 @@
         ) -}}
         {%- endblock missing_lines_badge_total_cell -%}
 
-        {% if branch_coverage %}
-        {#- Branches cell -#}
-        {%- block branches_badge_total_cell scoped -%}
-        {{- macros.branches_badge(
-          path="the whole project",
-          branches_count=coverage.info.num_branches,
-        ) -}}
-        {%- endblock branches_badge_total_cell -%}
-
-        {#- Missing cell -#}
-        {%- block missing_branches_badge_total_cell scoped -%}
-        {{- macros.missing_branches_badge(
-          path="the whole project",
-          missing_branches_count=coverage.info.missing_branches,
-        ) -}}
-        {%- endblock missing_branches_badge_total_cell -%}
-        {% endif %}
-
         {#- Coverage rate -#}
         {%- block coverage_rate_badge_total_cell scoped -%}
         {{- macros.coverage_rate_badge(
@@ -177,9 +127,6 @@
         {%- endblock diff_coverage_rate_badge_total_cell -%}
 
           <td>&nbsp;</td>
-        {% if branch_coverage %}
-          <td>&nbsp;</td>
-        {% endif %}
   </tr>
   </tfoot>
   </table>

@@ -166,37 +166,6 @@ def test_comment_template(coverage_obj, diff_coverage_obj):
     assert '<!-- foo -->' in result
 
 
-def test_comment_template_branch_coverage(coverage_obj, diff_coverage_obj):
-    chaned_files, total = template.select_changed_files(
-        coverage=coverage_obj,
-        diff_coverage=diff_coverage_obj,
-        max_files=25,
-        skip_covered_files_in_report=True,
-    )
-    result = template.get_comment_markdown(
-        template.read_template_file('comment.md.j2'),
-        coverage_obj,
-        diff_coverage_obj,
-        decimal.Decimal('100'),
-        decimal.Decimal('70'),
-        'org/repo',
-        1,
-        'main',
-        '<!-- foo -->',
-        coverage_files=chaned_files,
-        count_coverage_files=total,
-        files=chaned_files,
-        count_files=total,
-        max_files=25,
-        branch_coverage=True,
-    )
-    assert result.startswith('## Coverage report')
-    assert '<!-- foo -->' in result
-    assert '<th>Branches</th><th>Missing</th>' in result
-    assert 'Missing branches' in result
-    assert 'colspan="9"' in result
-
-
 def test_template_no_files(coverage_obj):
     diff_coverage = DiffCoverage(
         total_num_lines=0,
