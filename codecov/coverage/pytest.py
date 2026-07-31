@@ -3,7 +3,6 @@ import datetime
 import decimal
 import pathlib
 
-from codecov import diff_grouper
 from codecov.config import Config, TestFramework
 from codecov.coverage.base import BaseCoverage, BaseCoverageHandler, DiffCoverage, FileDiffCoverage
 
@@ -150,6 +149,18 @@ class PytestCoverageHandler(BaseCoverageHandler[PytestCoverage]):
             info=self.extract_coverage_info(data['totals']),
         )
 
+    @staticmethod
+    def select_diff_branches(
+        branches: list[list[int]] | None,
+        added_lines: set[int],
+    ) -> list[list[int]]:
+        """
+        Branches are ``[source line, destination line]`` arcs, where a negative destination
+        means the branch leaves the enclosing scope. Only the source line says where the
+        branch is written, so that is what decides whether the arc belongs to the diff.
+        """
+        return [branch for branch in branches or [] if branch[0] in added_lines]
+
     def get_diff_coverage(  # pylint: disable=too-many-locals
         self,
         added_lines: dict[pathlib.Path, list[int]],
@@ -184,14 +195,22 @@ class PytestCoverageHandler(BaseCoverageHandler[PytestCoverage]):
             total_num_lines += count_total
             total_num_violations += count_missing
 
+            covered_branches: list[list[int]] = []
+            missing_branches: list[list[int]] = []
             if config.BRANCH_COVERAGE:
-                total_num_branches_covered += file.info.covered_branches or 0
-                total_num_branches += file.info.num_branches or 0
+                added_lines_set = set(added_lines_for_file)
+                covered_branches = self.select_diff_branches(file.executed_branches, added_lines_set)
+                missing_branches = self.select_diff_branches(file.missing_branches, added_lines_set)
+                count_branches_covered = len(covered_branches)
+                count_branches = count_branches_covered + len(missing_branches)
+
+                total_num_branches_covered += count_branches_covered
+                total_num_branches += count_branches
                 percent_covered = self.compute_coverage(
                     num_covered=count_executed,
                     num_total=count_total,
-                    num_branches_covered=file.info.covered_branches or 0,
-                    num_branches_total=file.info.num_branches or 0,
+                    num_branches_covered=count_branches_covered,
+                    num_branches_total=count_branches,
                 )
             else:
                 percent_covered = self.compute_coverage(num_covered=count_executed, num_total=count_total)
@@ -203,6 +222,8 @@ class PytestCoverageHandler(BaseCoverageHandler[PytestCoverage]):
                 missing_statements=sorted(missing),
                 added_statements=sorted(added),
                 added_lines=added_lines_for_file,
+                covered_branches=covered_branches,
+                missing_branches=missing_branches,
             )
         if config.BRANCH_COVERAGE:
             final_percentage = self.compute_coverage(
@@ -224,11 +245,3 @@ class PytestCoverageHandler(BaseCoverageHandler[PytestCoverage]):
             num_changed_lines=num_changed_lines,
             files=files,
         )
-
-    def get_coverage(self, config: Config) -> PytestCoverage:
-        coverage = super().get_coverage(config=config)
-
-        if config.BRANCH_COVERAGE:
-            coverage = diff_grouper.fill_branch_missing_groups(coverage=coverage)
-
-        return coverage

@@ -167,7 +167,7 @@ class TestBase:
         'added_lines, update_obj, expected',
         [
             # A similar example to the previous one, but with branch coverage enabled.
-            # The statements are covered, but the branches are not.
+            # Only the branches written on an added line count
             (
                 {
                     pathlib.Path('codebase/code.py'): [4, 5, 6],
@@ -177,25 +177,33 @@ class TestBase:
                 DiffCoverage(
                     total_num_lines=1,
                     total_num_violations=1,
-                    total_percent_covered=decimal.Decimal('0.25'),
+                    # 2 of the 4 added branches are covered, and the single added
+                    # statement is not: (0 + 2) / (1 + 4).
+                    total_percent_covered=decimal.Decimal('0.4'),
                     num_changed_lines=5,
-                    # Percent is due to the fact that the branches are not covered.
                     files={
                         pathlib.Path('codebase/code.py'): FileDiffCoverage(
                             path=pathlib.Path('codebase/code.py'),
-                            percent_covered=decimal.Decimal('0.25'),
+                            # (0 + 1) / (1 + 2)
+                            percent_covered=decimal.Decimal(1) / decimal.Decimal(3),
                             added_statements=[6],
                             covered_statements=[],
                             missing_statements=[6],
                             added_lines=[4, 5, 6],
+                            covered_branches=[[5, 6]],
+                            missing_branches=[[5, -5]],
                         ),
                         pathlib.Path('codebase/other.py'): FileDiffCoverage(
                             path=pathlib.Path('codebase/other.py'),
-                            percent_covered=decimal.Decimal('0.25'),
+                            # No statement was added, so only the branches count:
+                            # (0 + 1) / (0 + 2)
+                            percent_covered=decimal.Decimal('0.5'),
                             added_statements=[],
                             covered_statements=[],
                             missing_statements=[],
                             added_lines=[10, 13],
+                            covered_branches=[[13, 14]],
+                            missing_branches=[[10, 11]],
                         ),
                     },
                 ),
@@ -219,25 +227,55 @@ class TestBase:
                 DiffCoverage(
                     total_num_lines=9,
                     total_num_violations=4,
-                    total_percent_covered=decimal.Decimal('0.4375'),
+                    # (9 - 4 + 2) / (9 + 4)
+                    total_percent_covered=decimal.Decimal(7) / decimal.Decimal(13),
                     num_changed_lines=9,
-                    # Percent is due to the fact that the branches are not covered.
                     files={
                         pathlib.Path('codebase/code.py'): FileDiffCoverage(
                             path=pathlib.Path('codebase/code.py'),
-                            percent_covered=decimal.Decimal('0.625'),
+                            # (4 + 1) / (5 + 2)
+                            percent_covered=decimal.Decimal(5) / decimal.Decimal(7),
                             added_statements=[2, 3, 4, 5, 6],
                             covered_statements=[2, 3, 5, 6],
                             missing_statements=[4, 5],
                             added_lines=[2, 3, 4, 5, 6],
+                            covered_branches=[[5, 6]],
+                            missing_branches=[[5, -5]],
                         ),
                         pathlib.Path('codebase/other.py'): FileDiffCoverage(
                             path=pathlib.Path('codebase/other.py'),
-                            percent_covered=decimal.Decimal('0.625'),
+                            # (4 + 1) / (4 + 2)
+                            percent_covered=decimal.Decimal(5) / decimal.Decimal(6),
                             added_statements=[10, 11, 12, 13],
                             covered_statements=[10, 11, 12, 13],
                             missing_statements=[10, 13],
                             added_lines=[10, 11, 12, 13],
+                            covered_branches=[[13, 14]],
+                            missing_branches=[[10, 11]],
+                        ),
+                    },
+                ),
+            ),
+            # A diff that adds no branch at all is fully covered, even though the file
+            # still holds branches missing coverage outside of the diff.
+            (
+                {pathlib.Path('codebase/code.py'): [1, 2, 3]},
+                {},
+                DiffCoverage(
+                    total_num_lines=3,
+                    total_num_violations=0,
+                    total_percent_covered=decimal.Decimal('1'),
+                    num_changed_lines=3,
+                    files={
+                        pathlib.Path('codebase/code.py'): FileDiffCoverage(
+                            path=pathlib.Path('codebase/code.py'),
+                            percent_covered=decimal.Decimal('1'),
+                            added_statements=[1, 2, 3],
+                            covered_statements=[1, 2, 3],
+                            missing_statements=[],
+                            added_lines=[1, 2, 3],
+                            covered_branches=[],
+                            missing_branches=[],
                         ),
                     },
                 ),

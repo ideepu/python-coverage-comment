@@ -42,30 +42,8 @@ def test_get_missing_groups_more_files(coverage_obj_more_files):
     ]
 
 
-def test_flatten_branches():
-    assert not diff_grouper._flatten_branches(branches=None)
+def test_get_missing_groups_ignores_branches(coverage_obj):
+    """Branches are arcs, not line ranges, so grouping never touches them."""
+    list(diff_grouper.get_missing_groups(coverage=coverage_obj))
 
-    flattened_branches = diff_grouper._flatten_branches([[1, 2], [3, 4]])
-    assert flattened_branches == [1, 2, 3, 4]
-
-    flattened_branches = diff_grouper._flatten_branches([[1, 1]])
-    assert flattened_branches == [1]
-
-    flattened_branches = diff_grouper._flatten_branches([[-1, -2], [3, 4]])
-    assert flattened_branches == [1, 2, 3, 4]
-
-    flattened_branches = diff_grouper._flatten_branches([[-1, -2], [3, 4], [5, 5]])
-    assert flattened_branches == [1, 2, 3, 4, 5]
-
-
-def test_fill_branch_missing_groups(coverage_obj):
-    result = diff_grouper.fill_branch_missing_groups(coverage=coverage_obj)
-
-    assert result.files[pathlib.Path('codebase/code.py')].missing_branches == [[5, 11]]
-
-
-def test_fill_branch_missing_groups_more_files(coverage_obj_more_files):
-    result = diff_grouper.fill_branch_missing_groups(coverage=coverage_obj_more_files)
-
-    assert result.files[pathlib.Path('codebase/code.py')].missing_branches == [[5, 11]]
-    assert result.files[pathlib.Path('codebase/other.py')].missing_branches == [[3, 11]]
+    assert coverage_obj.files[pathlib.Path('codebase/code.py')].missing_branches == [[5, -5], [10, 11]]

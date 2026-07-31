@@ -48,11 +48,24 @@
     {%- endfor -%}
 {%- endmacro -%}
 
+{#-
+  A branch is a `[source line, destination line]` arc. A negative destination means the
+  branch leaves the enclosing scope, which coverage.py renders as `exit`, and there is no
+  destination line to link to in that case. The arc of a loop points backwards, so the
+  link range is normalised to keep the lower line first.
+-#}
 {%- macro missing_branches_links(path, branches, base=false) -%}
     {%- set comma = joiner() -%}
     {%- for branch in branches -%}
+        {%- set source = branch[0] -%}
+        {%- set destination = branch[1] -%}
         {{- comma() -}}
-        [{{ branch[0] | abs }} -> {{ branch[1] | abs }}]({{ path | file_url(lines=(branch[0] | abs, branch[1] | abs), base=base) }})
+        {%- if destination < 0 -%}
+            [{{ source }} -> exit]({{ path | file_url(lines=(source, source), base=base) }})
+        {%- else -%}
+            {%- set lines = (source, destination) if destination > source else (destination, source) -%}
+            [{{ source }} -> {{ destination }}]({{ path | file_url(lines=lines, base=base) }})
+        {%- endif -%}
     {%- endfor -%}
 {%- endmacro -%}
 
@@ -71,10 +84,13 @@
 | :-- | :-: | :-: |{% if branch_coverage %} :-: | :-: |{% endif %} :-: |{% if with_diff %} :-: |{% endif %} :-- |{% if branch_coverage %} :-- |{% endif %}
 {%- endmacro -%}
 
+{#- The pull request table lists the branches missing coverage among the added lines only,
+    the whole project table lists every branch missing coverage in the file. -#}
 {%- macro file_row(file, missing_map, branch_coverage, base, with_diff) -%}
 {%- set path = file.coverage.path -%}
 {%- set info = file.coverage.info -%}
-| &nbsp;&nbsp;[{{ path.name }}]({{ path | file_url(base=base) }}) | {{ statements_badge(path, info.num_statements, base) }} | {{ missing_lines_badge(path, info.missing_lines, base) }} |{% if branch_coverage %} {{ branches_badge(path, info.num_branches, base) }} | {{ missing_branches_badge(path, info.missing_branches, base) }} |{% endif %} {{ coverage_rate_badge(path, info.percent_covered, info.percent_covered_display, info.covered_lines, info.num_statements, base) }} |{% if with_diff %} {{ diff_coverage_rate_badge(path, (file.diff.added_statements | length) if file.diff else none, (file.diff.covered_statements | length) if file.diff else none, file.diff.percent_covered if file.diff else none) }} |{% endif %} {{ missing_lines_links(path, missing_map.get(path, []), base) }} |{% if branch_coverage %} {{ missing_branches_links(path, file.coverage.missing_branches or [], base) }} |{% endif %}
+{%- set missing_branches = (file.diff.missing_branches if with_diff and file.diff else file.coverage.missing_branches) or [] -%}
+| &nbsp;&nbsp;[{{ path.name }}]({{ path | file_url(base=base) }}) | {{ statements_badge(path, info.num_statements, base) }} | {{ missing_lines_badge(path, info.missing_lines, base) }} |{% if branch_coverage %} {{ branches_badge(path, info.num_branches, base) }} | {{ missing_branches_badge(path, info.missing_branches, base) }} |{% endif %} {{ coverage_rate_badge(path, info.percent_covered, info.percent_covered_display, info.covered_lines, info.num_statements, base) }} |{% if with_diff %} {{ diff_coverage_rate_badge(path, (file.diff.added_statements | length) if file.diff else none, (file.diff.covered_statements | length) if file.diff else none, file.diff.percent_covered if file.diff else none) }} |{% endif %} {{ missing_lines_links(path, missing_map.get(path, []), base) }} |{% if branch_coverage %} {{ missing_branches_links(path, missing_branches, base) }} |{% endif %}
 {%- endmacro -%}
 
 {%- macro total_row(totals, diff_totals, branch_coverage, with_diff) -%}

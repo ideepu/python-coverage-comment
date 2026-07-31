@@ -50,12 +50,11 @@ Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` 
 
 1. The coverage report displays only files that have missing coverage. If all files are fully covered, the
    report will be empty.
-2. When branch coverage is enabled, the coverage percentage is calculated based on the uncovered branches in
-   the affected files.
+2. When branch coverage is enabled, the pull request coverage percentage counts the branches written on the
+   added statements, and the `Missing branches` column lists those branches as `source -> destination` arcs.
 3. If the complete project report option is enabled, the report is included as-is in the comment, without any
    modifications or recalculations. If you notice discrepancies between the PR coverage and the complete
-   project coverage, this may be expected. For consistent results, it is recommended to enable branch
-   coverage when your report includes it.
+   project coverage, this may be expected.
 
 ## Dev Setup
 
