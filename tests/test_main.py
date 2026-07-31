@@ -121,67 +121,14 @@ class TestMain:
                     marker=template.MARKER,
                 )
 
-    @patch('codecov.main.groups.create_missing_coverage_annotations')
-    def test_generate_annotations_empty(
-        self,
-        create_missing_coverage_annotations_mock: MagicMock,
-        test_config,
-        gh,
-        coverage_obj,
-        diff_coverage_obj,
-    ):
-        with patch.object(Main, '_init_config', return_value=test_config):
-            with patch.object(Main, '_init_github', return_value=gh):
-                main = Main()
-                main.config.ANNOTATE_MISSING_LINES = False
-                assert main._generate_annotations() is None
-
-        create_missing_coverage_annotations_mock.return_value = []
-        with patch.object(Main, '_init_config', return_value=test_config):
-            with patch.object(Main, '_init_github', return_value=gh):
-                main = Main()
-                main.config.ANNOTATE_MISSING_LINES = True
-                main.coverage = coverage_obj
-                main.diff_coverage = diff_coverage_obj
-                assert main._generate_annotations() is None
-
-        with patch.object(Main, '_init_config', return_value=test_config):
-            with patch.object(Main, '_init_github', return_value=gh):
-                main = Main()
-                main.config.ANNOTATE_MISSING_LINES = True
-                main.config.BRANCH_COVERAGE = True
-                main.coverage = coverage_obj
-                main.diff_coverage = diff_coverage_obj
-                assert main._generate_annotations() is None
-
-    def test_generate_annotations(self, test_config, gh, coverage_obj, diff_coverage_obj):
-        with patch.object(Main, '_init_config', return_value=test_config):
-            with patch.object(Main, '_init_github', return_value=gh):
-                main = Main()
-                main.config.ANNOTATE_MISSING_LINES = True
-                main.coverage = coverage_obj
-                main.diff_coverage = diff_coverage_obj
-                assert main._generate_annotations() is None
-
-        with patch.object(Main, '_init_config', return_value=test_config):
-            with patch.object(Main, '_init_github', return_value=gh):
-                main = Main()
-                main.config.BRANCH_COVERAGE = True
-                main.config.ANNOTATE_MISSING_LINES = True
-                main.coverage = coverage_obj
-                main.diff_coverage = diff_coverage_obj
-                assert main._generate_annotations() is None
-
     def test_run(self, test_config, gh):
         with patch.object(Main, '_init_config', return_value=test_config):
             with patch.object(Main, '_init_github', return_value=gh):
                 main = Main()
                 main._process_coverage = MagicMock()
                 main._create_comment = MagicMock()
-                main._generate_annotations = MagicMock()
 
                 assert main.run() is None
 
                 main._process_coverage.assert_called_once()
                 main._create_comment.assert_called_once()
-                main._generate_annotations.assert_called_once()

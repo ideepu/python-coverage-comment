@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from codecov.coverage.jest import JestCoverage
     from codecov.coverage.pytest import PytestCoverage
 
-MAX_ANNOTATION_GAP = 3
+MAX_GROUP_GAP = 3
 
 
 def _flatten_branches(branches: list[list[int]] | None) -> list[int]:
@@ -45,7 +45,7 @@ def get_missing_groups(
             values=coverage_file.missing_lines,
             separators=separators,
             joiners=joiners,
-            max_gap=MAX_ANNOTATION_GAP,
+            max_gap=MAX_GROUP_GAP,
         ):
             yield groups.Group(
                 file=path,
@@ -70,7 +70,7 @@ def get_diff_missing_groups(
             values=diff_file.missing_statements,
             separators=separators,
             joiners=joiners,
-            max_gap=MAX_ANNOTATION_GAP,
+            max_gap=MAX_GROUP_GAP,
         ):
             yield groups.Group(
                 file=path,
@@ -93,21 +93,7 @@ def fill_branch_missing_groups(coverage: 'PytestCoverage') -> 'PytestCoverage':
                 values=_flatten_branches(branches=file_coverage.missing_branches),
                 separators=separators,
                 joiners=joiners,
-                max_gap=MAX_ANNOTATION_GAP,
+                max_gap=MAX_GROUP_GAP,
             )
         ]
     return coverage
-
-
-def get_diff_branch_missing_groups(
-    coverage: 'PytestCoverage',
-    diff_coverage: 'DiffCoverage',
-) -> Iterable[groups.Group]:
-    for path, _ in diff_coverage.files.items():
-        coverage_file = coverage.files[path]
-        for start, end in coverage_file.missing_branches or []:
-            yield groups.Group(
-                file=path,
-                line_start=start,
-                line_end=end,
-            )

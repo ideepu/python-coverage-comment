@@ -51,8 +51,6 @@ def test_config_from_environ_sample():
                 'GITHUB_REF': 'main',
                 'MINIMUM_GREEN': '90',
                 'MINIMUM_ORANGE': '70',
-                'ANNOTATE_MISSING_LINES': 'True',
-                'ANNOTATION_TYPE': 'notice',
                 'MAX_FILES_IN_COMMENT': 25,
                 'COMPLETE_PROJECT_REPORT': 'True',
                 'COVERAGE_REPORT_URL': 'https://your_coverage_report_url',
@@ -66,8 +64,6 @@ def test_config_from_environ_sample():
             GITHUB_REF='main',
             MINIMUM_GREEN=decimal.Decimal('90'),
             MINIMUM_ORANGE=decimal.Decimal('70'),
-            ANNOTATE_MISSING_LINES=True,
-            ANNOTATION_TYPE=config.AnnotationType.NOTICE,
             MAX_FILES_IN_COMMENT=25,
             COMPLETE_PROJECT_REPORT=True,
             COVERAGE_REPORT_URL='https://your_coverage_report_url',
@@ -85,11 +81,6 @@ def test_config_required_pr_or_ref():
                     'COVERAGE_PATH': temp_file.name,
                 }
             )
-
-
-def test_config_invalid_annotation_type():
-    with pytest.raises(ValueError):
-        config.Config.from_environ({'ANNOTATION_TYPE': 'foo'})
 
 
 @pytest.mark.parametrize(
@@ -120,11 +111,6 @@ def test_config_clean_minimum_orange():
     assert value == decimal.Decimal('70')
 
 
-def test_config_clean_annotate_missing_lines():
-    value = config.Config.clean_annotate_missing_lines('True')
-    assert value is True
-
-
 def test_config_clean_branch_coverage():
     value = config.Config.clean_branch_coverage('False')
     assert value is False
@@ -143,16 +129,6 @@ def test_config_clean_skip_covered_files_in_report():
 def test_config_clean_debug():
     value = config.Config.clean_debug('False')
     assert value is False
-
-
-def test_config_clean_annotation_type():
-    value = config.Config.clean_annotation_type('warning')
-    assert value == config.AnnotationType.WARNING
-
-
-def test_config_clean_annotation_type_invalid():
-    with pytest.raises(ValueError):
-        config.Config.clean_annotation_type('foo')
 
 
 def test_config_clean_github_pr_number():

@@ -27,12 +27,6 @@ def str_to_bool(value: str) -> bool:
     return value.lower() in ('1', 'true', 'yes')
 
 
-class AnnotationType(Enum):
-    NOTICE = 'notice'
-    WARNING = 'warning'
-    ERROR = 'error'
-
-
 class TestFramework(Enum):
     PYTEST = 'pytest'
     JEST = 'jest'
@@ -53,8 +47,6 @@ class Config:
     TEST_FRAMEWORK: TestFramework = TestFramework.PYTEST
     # TODO: Remove branch coverage and just use the report
     BRANCH_COVERAGE: bool = False
-    ANNOTATE_MISSING_LINES: bool = False
-    ANNOTATION_TYPE: AnnotationType = AnnotationType.WARNING
     MAX_FILES_IN_COMMENT: int = 25
     SKIP_COVERED_FILES_IN_REPORT: bool = True
     COMPLETE_PROJECT_REPORT: bool = False
@@ -75,10 +67,6 @@ class Config:
         return decimal.Decimal(value)
 
     @classmethod
-    def clean_annotate_missing_lines(cls, value: str) -> bool:
-        return str_to_bool(value)
-
-    @classmethod
     def clean_branch_coverage(cls, value: str) -> bool:
         return str_to_bool(value)
 
@@ -93,10 +81,6 @@ class Config:
     @classmethod
     def clean_debug(cls, value: str) -> bool:
         return str_to_bool(value)
-
-    @classmethod
-    def clean_annotation_type(cls, value: str) -> AnnotationType:
-        return AnnotationType(value)
 
     @classmethod
     def clean_github_pr_number(cls, value: str) -> int:

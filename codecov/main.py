@@ -1,7 +1,6 @@
 import os
-from typing import cast
 
-from codecov import diff_grouper, groups, template
+from codecov import template
 from codecov.config import Config
 from codecov.coverage.base import BaseCoverageHandler, DiffCoverage
 from codecov.coverage.jest import JestCoverage
@@ -49,7 +48,6 @@ class Main:
     def run(self):
         self._process_coverage()
         self._create_comment()
-        self._generate_annotations()
 
     def _process_coverage(self):
         log.info('Processing coverage data')
@@ -123,40 +121,3 @@ class Main:
 
         self.github.post_comment(contents=comment, marker=self.marker)
         log.info('Comment created on PR.')
-
-    def _generate_annotations(self):
-        if not self.config.ANNOTATE_MISSING_LINES:
-            log.info('Skipping annotations generation.')
-            return
-
-        log.info('Generating annotations for missing lines.')
-        annotations = diff_grouper.get_diff_missing_groups(coverage=self.coverage, diff_coverage=self.diff_coverage)
-        formatted_annotations = groups.create_missing_coverage_annotations(
-            annotation_type=self.config.ANNOTATION_TYPE.value,
-            annotations=annotations,
-        )
-
-        if self.config.BRANCH_COVERAGE:
-            branch_annotations = diff_grouper.get_diff_branch_missing_groups(
-                coverage=cast(PytestCoverage, self.coverage),
-                diff_coverage=self.diff_coverage,
-            )
-            formatted_annotations.extend(
-                groups.create_missing_coverage_annotations(
-                    annotation_type=self.config.ANNOTATION_TYPE.value,
-                    annotations=branch_annotations,
-                    branch=True,
-                )
-            )
-
-        if not formatted_annotations:
-            log.info('No annotations to generate. Exiting.')
-            return
-
-        # Print to console
-        log.info('Annotations:')
-        yellow = '\033[93m'
-        reset = '\033[0m'
-        print(yellow, end='')
-        print(*formatted_annotations, sep='\n')
-        print(reset, end='')
