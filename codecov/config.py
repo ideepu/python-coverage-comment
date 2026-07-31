@@ -50,7 +50,6 @@ class Config:
     MAX_FILES_IN_COMMENT: int = 25
     SKIP_COVERED_FILES_IN_REPORT: bool = True
     COMPLETE_PROJECT_REPORT: bool = False
-    COVERAGE_REPORT_URL: str | None = None
     LABEL: str | None = None
     DEBUG: bool = False
 

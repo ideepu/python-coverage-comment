@@ -164,6 +164,11 @@ def test_comment_template(coverage_obj, diff_coverage_obj):
     )
     assert result.startswith('## Coverage report')
     assert '<!-- foo -->' in result
+    assert '| File | Statements | Missing |' in result
+    assert '(new stmts)' in result
+    assert 'Missing stmts' in result
+    assert 'Branches' not in result
+    assert 'img.shields.io/badge/' in result
 
 
 def test_comment_template_branch_coverage(coverage_obj, diff_coverage_obj):
@@ -192,9 +197,43 @@ def test_comment_template_branch_coverage(coverage_obj, diff_coverage_obj):
     )
     assert result.startswith('## Coverage report')
     assert '<!-- foo -->' in result
-    assert '<th>Branches</th><th>Missing</th>' in result
+    assert '| File | Statements | Missing | Branches | Missing |' in result
     assert 'Missing branches' in result
-    assert 'colspan="9"' in result
+    assert '(new stmts)' in result
+    # The delimiter row must always declare as many columns as the header row
+    assert '| :-- | :-: | :-: | :-: | :-: | :-: | :-: | :-- | :-- |' in result
+
+
+def test_comment_template_project_report(coverage_obj, diff_coverage_obj):
+    coverage_files, total = template.select_files(
+        coverage=coverage_obj,
+        max_files=25,
+        skip_covered_files_in_report=True,
+    )
+    result = template.get_comment_markdown(
+        template.read_template_file('comment.md.j2'),
+        coverage_obj,
+        diff_coverage_obj,
+        decimal.Decimal('100'),
+        decimal.Decimal('70'),
+        'org/repo',
+        1,
+        'main',
+        '<!-- foo -->',
+        coverage_files=coverage_files,
+        count_coverage_files=total,
+        files=[],
+        count_files=0,
+        max_files=25,
+        branch_coverage=True,
+        complete_project_report=True,
+    )
+    # The whole project table has no newly added statements column
+    assert '| File | Statements | Missing | Branches | Missing |' in result
+    assert 'Missing branches' in result
+    assert '(new stmts)' not in result
+    assert 'https://github.com/org/repo/blob/main/codebase/code.py' in result
+    assert '| :-- | :-: | :-: | :-: | :-: | :-: | :-- | :-- |' in result
 
 
 def test_template_no_files(coverage_obj):

@@ -48,7 +48,7 @@ default-groups = [ "dev" ]
 [tool.ruff]
 target-version = "py311"
 line-length = 120
-extend-exclude = [ "*.mdc" ]
+extend-exclude = [ "*.md", "*.mdc" ]
 format.quote-style = "single"
 lint.select = [
   "E",   # Errors
