@@ -1,0 +1,98 @@
+---
+alwaysApply: true
+---
+# Creating a Pull Request
+
+Follow this workflow when preparing or opening a PR for `python-coverage-comment`.
+
+## Gather Context
+
+Run these commands in parallel to understand what will be in the PR:
+
+```bash
+git status
+git diff --staged
+git diff
+git log --oneline -20
+```
+
+## Branch and commits
+
+- Never commit directly to `main` (`no-commit-to-branch` hook enforces this).
+- Create a descriptive branch from `main`, e.g. `remove-annotations-feature`.
+    ### Branch Naming
+    1. Sync base branch before branching:
+        - Default base branch is `main` unless user says otherwise.
+        - Fetch and update local reference for the base branch (for example: `git fetch origin main`).
+        - Create the new branch from latest `origin/<base-branch>` so the branch starts from current base.
+    2. Create a branch following project naming conventions. **Compliance:** branch names must use an allowed prefix; do not invent alternatives.
+        - `feature/<description>` for new features
+        - `fix/<description>` for any kind of fix works
+        - `docs/<description>` for documentation updates
+        - `refactor/<description>` for no functionality changes
+
+- Use conventional commit messages enforced by the commit-msg hook:
+
+```
+<type>: <short description>
+
+Examples:
+feature: add support for jest coverage reports
+fix: handle empty diff coverage files
+refactor: remove annotations generation feature
+docs: update environment variable docs
+```
+
+- Allowed types: `feature`, `fix`, `docs`, `refactor` (optional `!` for breaking changes).
+- Only commit when the user asks. Never amend pushed commits unless explicitly requested.
+
+## Pre-PR checks
+
+Run locally before pushing:
+
+```bash
+make lint    # pre-commit: ruff, mypy, markdownlint, yaml/toml, etc.
+make test    # pytest with branch coverage (also runs on pre-push)
+```
+
+CI runs the same checks: pre-commit on PRs and `make test` in `.github/workflows/pre-commit-action.yaml`.
+
+## Tests
+
+- Place tests in `tests/` using `test_*.py` naming (`name-tests-test` hook).
+- Add or update tests for behavior changes.
+- Match existing pytest style and fixtures in `tests/conftest.py`.
+
+## Code style
+
+- Python 3.11+, managed with `uv` (`make dev` / `uv sync --all-groups`).
+- Follow ruff settings in `pyproject.toml` (line length 120, single quotes).
+- Keep changes focused; match patterns in `codecov/` and surrounding code.
+- Do not edit unrelated files or add docs unless requested.
+
+## Opening the PR
+
+Use `gh` for GitHub tasks. Before creating a PR, inspect the branch:
+
+```bash
+git status
+git diff
+git log main...HEAD
+```
+
+Push and create:
+
+```bash
+git push -u origin HEAD
+gh pr create --title "<type>: <title>" --body "$(cat <<'EOF'
+## Summary
+- <what changed and why>
+
+## Test plan
+- [ ] `make lint`
+- [ ] `make test`
+EOF
+)"
+```
+
+Return the PR URL when done. Do not push unless the user asks.
