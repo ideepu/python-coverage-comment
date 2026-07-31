@@ -425,5 +425,4 @@ def gh(gh_client, test_config: Config):
     github_mock.user.email = 'baz@foobar.com'
     github_mock.user.login = 'foo'
     github_mock.post_comment = MagicMock(return_value=None)
-    github_mock.write_annotations_to_branch = MagicMock(return_value=None)
     return github_mock

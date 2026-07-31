@@ -40,8 +40,6 @@ Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` 
 - `MINIMUM_GREEN`: The minimum coverage percentage for green status. Default is 100.
 - `MINIMUM_ORANGE`: The minimum coverage percentage for orange status. Default is 70.
 - `BRANCH_COVERAGE`: Show branch coverage in the report. Default is False.
-- `ANNOTATE_MISSING_LINES`: Whether to annotate missing lines in the coverage report. Default is False.
-- `ANNOTATION_TYPE`: The type of annotation to use for missing lines. 'notice' or 'warning' or 'error'. Default is 'warning'.
 - `MAX_FILES_IN_COMMENT`: The maximum number of files to include in the coverage report comment. Default is 25.
 - `SKIP_COVERED_FILES_IN_REPORT`: Skip the files with coverage 100% from the report. Default is True.
 - `COMPLETE_PROJECT_REPORT`: Whether to include the complete project coverage report in the comment. Default is False.

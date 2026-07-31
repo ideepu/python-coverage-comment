@@ -10,7 +10,7 @@
             <img title="{{ text }}" src="{{ 'Coverage' | generate_badge(message=coverage.info.percent_covered_display ~ '%', color=color) }}">
         {%- endif -%}
     {%- endblock coverage_evolution_badge -%}
-
+&nbsp;&nbsp;
     {#- PR coverage badge -#}
     {%- block diff_coverage_badge -%}
         {%- set text = (diff_coverage.total_percent_covered | pct) ~ " of the statements added in this PR are covered." -%}
