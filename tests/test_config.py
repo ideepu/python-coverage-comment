@@ -53,7 +53,6 @@ def test_config_from_environ_sample():
                 'MINIMUM_ORANGE': '70',
                 'MAX_FILES_IN_COMMENT': 25,
                 'COMPLETE_PROJECT_REPORT': 'True',
-                'COVERAGE_REPORT_URL': 'https://your_coverage_report_url',
                 'DEBUG': 'False',
             }
         ) == config.Config(
@@ -66,7 +65,6 @@ def test_config_from_environ_sample():
             MINIMUM_ORANGE=decimal.Decimal('70'),
             MAX_FILES_IN_COMMENT=25,
             COMPLETE_PROJECT_REPORT=True,
-            COVERAGE_REPORT_URL='https://your_coverage_report_url',
             DEBUG=False,
         )
 

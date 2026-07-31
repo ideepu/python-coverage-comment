@@ -95,7 +95,6 @@ class Main:
                 self.marker,
                 branch_coverage=self.config.BRANCH_COVERAGE,
                 complete_project_report=self.config.COMPLETE_PROJECT_REPORT,
-                coverage_report_url=self.config.COVERAGE_REPORT_URL,
                 max_files=self.config.MAX_FILES_IN_COMMENT,
                 files=diff_files_info,
                 count_files=diff_count_files,
