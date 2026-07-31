@@ -101,6 +101,7 @@ class Main:
                 count_files=diff_count_files,
                 coverage_files=coverage_files_info,
                 count_coverage_files=count_coverage_files,
+                label=self.config.LABEL,
             )
         except MissingMarker as e:
             log.error(

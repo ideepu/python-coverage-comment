@@ -51,6 +51,7 @@ class Config:
     SKIP_COVERED_FILES_IN_REPORT: bool = True
     COMPLETE_PROJECT_REPORT: bool = False
     COVERAGE_REPORT_URL: str | None = None
+    LABEL: str | None = None
     DEBUG: bool = False
 
     def __post_init__(self) -> None:
