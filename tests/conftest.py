@@ -57,7 +57,6 @@ def make_coverage() -> Callable[[str, bool], PytestCoverage]:
                 missing_lines=0,
                 excluded_lines=0,
                 num_branches=0 if has_branches else None,
-                num_partial_branches=0 if has_branches else None,
                 covered_branches=0 if has_branches else None,
                 missing_branches=0 if has_branches else None,
             ),
@@ -89,7 +88,6 @@ def make_coverage() -> Callable[[str, bool], PytestCoverage]:
                         missing_lines=0,
                         excluded_lines=0,
                         num_branches=0 if has_branches else None,
-                        num_partial_branches=0 if has_branches else None,
                         covered_branches=0 if has_branches else None,
                         missing_branches=0 if has_branches else None,
                     ),
@@ -136,8 +134,6 @@ def make_coverage() -> Callable[[str, bool], PytestCoverage]:
                     coverage_obj.info.covered_branches += 1
                     file_coverage.info.missing_branches += 1
                     coverage_obj.info.missing_branches += 1
-                    file_coverage.info.num_partial_branches += 1
-                    coverage_obj.info.num_partial_branches += 1
                 elif 'branch covered' in line:
                     file_coverage.executed_branches.append([line_number, line_number + 1])
                     file_coverage.info.num_branches += 1
@@ -234,8 +230,6 @@ def coverage_json():
                     'missing_lines': 4,
                     'excluded_lines': 0,
                     'num_branches': 7,
-                    # Line 5 is partial: one of its two arcs was taken.
-                    'num_partial_branches': 1,
                     'covered_branches': 4,
                     'missing_branches': 3,
                 },
@@ -254,7 +248,6 @@ def coverage_json():
             'missing_lines': 4,
             'excluded_lines': 0,
             'num_branches': 7,
-            'num_partial_branches': 1,
             'covered_branches': 4,
             'missing_branches': 3,
         },

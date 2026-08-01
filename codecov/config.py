@@ -45,7 +45,6 @@ class Config:
     MINIMUM_GREEN: decimal.Decimal = decimal.Decimal('100')
     MINIMUM_ORANGE: decimal.Decimal = decimal.Decimal('70')
     TEST_FRAMEWORK: TestFramework = TestFramework.PYTEST
-    # TODO: Remove branch coverage and just use the report
     BRANCH_COVERAGE: bool = False
     MAX_FILES_IN_COMMENT: int = 25
     SKIP_COVERED_FILES_IN_REPORT: bool = True
