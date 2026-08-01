@@ -14,7 +14,6 @@ class PytestCoverageInfo:  # pylint: disable=too-many-instance-attributes
     missing_lines: int
     excluded_lines: int
     num_branches: int | None
-    num_partial_branches: int | None  # TODO: Removed this
     covered_branches: int | None
     missing_branches: int | None
     percent_covered: decimal.Decimal
@@ -80,7 +79,6 @@ class PytestCoverageHandler(BaseCoverageHandler[PytestCoverage]):
             missing_lines=data['missing_lines'],
             excluded_lines=data['excluded_lines'],
             num_branches=data.get('num_branches'),
-            num_partial_branches=data.get('num_partial_branches'),
             covered_branches=data.get('covered_branches'),
             missing_branches=data.get('missing_branches'),
         )
@@ -116,7 +114,6 @@ class PytestCoverageHandler(BaseCoverageHandler[PytestCoverage]):
                         "missing_lines": 4,
                         "excluded_lines": 0,
                         "num_branches": 22,
-                        "num_partial_branches": 4,
                         "covered_branches": 18,
                         "missing_branches": 4
                     },
@@ -134,7 +131,6 @@ class PytestCoverageHandler(BaseCoverageHandler[PytestCoverage]):
                 "missing_lines": 1,
                 "excluded_lines": 0,
                 "num_branches": 2,
-                "num_partial_branches": 1,
                 "covered_branches": 1,
                 "missing_branches": 1,
             },
