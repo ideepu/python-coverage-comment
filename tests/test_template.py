@@ -169,6 +169,13 @@ def test_comment_template(coverage_obj, diff_coverage_obj):
     assert 'Missing stmts' in result
     assert 'Branches' not in result
     assert 'img.shields.io/badge/' in result
+    # Coarse badge labels keep their rounded text; hover titles carry two decimals.
+    precise_coverage = template.pct(coverage_obj.info.percent_covered, precision=2)
+    precise_diff = template.pct(diff_coverage_obj.total_percent_covered, precision=2)
+    precise_file_diff = template.pct(chaned_files[0].diff.percent_covered, precision=2)
+    assert f'title="{precise_coverage}"' in result
+    assert f'title="{precise_diff}"' in result
+    assert f' "{precise_file_diff}")' in result
 
 
 def test_comment_template_branch_coverage(coverage_obj, diff_coverage_obj_branch):

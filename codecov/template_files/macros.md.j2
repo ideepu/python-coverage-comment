@@ -4,8 +4,8 @@
   <td align="center">: in a GitHub Flavoured Markdown table the alignment
   belongs to the delimiter row of the table.
 -#}
-{%- macro badge(path, label, message, color, base=false) -%}
-[![]({{ label | generate_badge(message=message, color=color) }})]({{ path | file_url(base=base) }})
+{%- macro badge(path, label, message, color, base=false, title=none) -%}
+[![]({{ label | generate_badge(message=message, color=color) }})]({{ path | file_url(base=base) }}{% if title %} "{{ title }}"{% endif %})
 {%- endmacro -%}
 
 {%- macro statements_badge(path, statements_count, base=false) -%}
@@ -27,14 +27,16 @@
 {%- macro coverage_rate_badge(path, percent_covered, percent_covered_display, covered_statements_count, statements_count, base=false) -%}
     {%- set label = percent_covered_display ~ "%" -%}
     {%- set message = "(" ~ covered_statements_count ~ "/" ~ statements_count ~ ")" -%}
-    {{- badge(path, label, message, percent_covered | x100 | get_badge_color, base) -}}
+    {%- set title = percent_covered | pct(precision=2) -%}
+    {{- badge(path, label, message, percent_covered | x100 | get_badge_color, base, title) -}}
 {%- endmacro -%}
 
 {%- macro diff_coverage_rate_badge(path, added_statements_count, covered_statements_count, percent_covered) -%}
     {%- if added_statements_count -%}
         {%- set label = (percent_covered | pct(precision=0)) -%}
         {%- set message = "(" ~ covered_statements_count ~ "/" ~ added_statements_count ~ ")" -%}
-        {{- badge(path, label, message, percent_covered | x100 | get_badge_color()) -}}
+        {%- set title = percent_covered | pct(precision=2) -%}
+        {{- badge(path, label, message, percent_covered | x100 | get_badge_color(), title=title) -}}
     {%- else -%}
         {{- badge(path, "", "N/A", "grey") -}}
     {%- endif -%}
