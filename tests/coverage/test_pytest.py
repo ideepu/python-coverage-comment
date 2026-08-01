@@ -4,6 +4,8 @@ import json
 import pathlib
 from unittest.mock import patch
 
+import pytest
+
 from codecov.coverage.pytest import (
     PytestCoverage,
     PytestCoverageHandler,
@@ -35,13 +37,13 @@ class TestPytestCoverage:
                         percent_covered_display='60%',
                         missing_lines=4,
                         excluded_lines=0,
-                        num_branches=3,
+                        num_branches=7,
                         num_partial_branches=1,
-                        covered_branches=1,
-                        missing_branches=1,
+                        covered_branches=4,
+                        missing_branches=3,
                     ),
-                    executed_branches=[[1, 0], [2, 1], [3, 0], [5, 1], [13, 0], [14, 0]],
-                    missing_branches=[[6, 0], [8, 1], [10, 0], [11, 0]],
+                    executed_branches=[[2, 3], [3, 5], [5, 6], [13, 14]],
+                    missing_branches=[[5, -1], [10, 11], [11, -1]],
                 )
             },
             info=PytestCoverageInfo(
@@ -51,16 +53,17 @@ class TestPytestCoverage:
                 percent_covered_display='60%',
                 missing_lines=4,
                 excluded_lines=0,
-                num_branches=3,
+                num_branches=7,
                 num_partial_branches=1,
-                covered_branches=1,
-                missing_branches=1,
+                covered_branches=4,
+                missing_branches=3,
             ),
         )
 
         assert PytestCoverageHandler().extract_info(coverage_json) == expected_coverage
 
     def test_get_coverage_with_branch_coverage(self, test_config, coverage_json):
+        """Branch arcs are reported as they come from the coverage report, never grouped."""
         config = dataclasses.replace(test_config, BRANCH_COVERAGE=True)
         handler = PytestCoverageHandler()
         with patch('pathlib.Path.open') as mock_open:
@@ -68,4 +71,24 @@ class TestPytestCoverage:
             coverage = handler.get_coverage(config=config)
 
         assert coverage.meta.branch_coverage is True
-        assert coverage.files[pathlib.Path('codebase/code.py')].missing_branches == [[0, 11]]
+        code = coverage.files[pathlib.Path('codebase/code.py')]
+        assert code.missing_branches == [[5, -1], [10, 11], [11, -1]]
+        assert code.executed_branches == [[2, 3], [3, 5], [5, 6], [13, 14]]
+
+    @pytest.mark.parametrize(
+        'branches, added_lines, expected',
+        [
+            (None, {1, 2}, []),
+            ([], {1, 2}, []),
+            # The source line decides whether the arc belongs to the diff, so an arc
+            # pointing at an added line from an untouched line is left out.
+            ([[2, 3], [4, 5]], {2, 3}, [[2, 3]]),
+            # An arc leaving the enclosing scope has a negative destination.
+            ([[2, -1], [4, -1]], {4}, [[4, -1]]),
+            # A loop branches backwards.
+            ([[7, 6]], {7}, [[7, 6]]),
+            ([[2, 3], [4, 5]], set(), []),
+        ],
+    )
+    def test_select_diff_branches(self, branches, added_lines, expected):
+        assert PytestCoverageHandler.select_diff_branches(branches, added_lines) == expected

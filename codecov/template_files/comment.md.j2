@@ -6,14 +6,16 @@
     {%- block coverage_evolution_badge -%}
         {%- if coverage %}
             {%- set color = coverage.info.percent_covered | x100 | get_badge_color -%}
-            <img src="{{ 'Coverage' | generate_badge(message=coverage.info.percent_covered_display ~ '%', color=color) }}">
+            {%- set precise = coverage.info.percent_covered | pct(precision=2) -%}
+            <img src="{{ 'Coverage' | generate_badge(message=coverage.info.percent_covered_display ~ '%', color=color) }}" title="{{ precise }}">
         {%- endif -%}
     {%- endblock coverage_evolution_badge -%}
 &nbsp;&nbsp;
     {#- PR coverage badge -#}
     {%- block diff_coverage_badge -%}
         {%- set color = diff_coverage.total_percent_covered | x100 | get_badge_color -%}
-        <img src="{{ 'PR Coverage' | generate_badge(message=diff_coverage.total_percent_covered | pct(precision=0), color=color) }}">
+        {%- set precise = diff_coverage.total_percent_covered | pct(precision=2) -%}
+        <img src="{{ 'PR Coverage' | generate_badge(message=diff_coverage.total_percent_covered | pct(precision=0), color=color) }}" title="{{ precise }}">
     {%- endblock diff_coverage_badge -%}
 {%- endblock coverage_badges -%}
 

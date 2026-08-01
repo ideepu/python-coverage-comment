@@ -50,12 +50,21 @@ Note: Either `GITHUB_PR_NUMBER` or `GITHUB_REF` is required. `GITHUB_PR_NUMBER` 
 
 1. The coverage report displays only files that have missing coverage. If all files are fully covered, the
    report will be empty.
-2. When branch coverage is enabled, the coverage percentage is calculated based on the uncovered branches in
-   the affected files.
-3. If the complete project report option is enabled, the report is included as-is in the comment, without any
-   modifications or recalculations. If you notice discrepancies between the PR coverage and the complete
-   project coverage, this may be expected. For consistent results, it is recommended to enable branch
-   coverage when your report includes it.
+2. When branch coverage is enabled, the pull request coverage percentage counts branch arcs whose source
+   line is among the added lines in the diff (alongside the added statements). The `Missing branches`
+   column lists those arcs as `source -> destination`. An arc that leaves its enclosing scope is shown as
+   `source -> exit`.
+3. In the pull request table, the `Branches` / `Missing` badges are whole-file totals from the coverage
+   report, while the `Missing branches` links list only arcs on added lines. A Missing count can therefore
+   be larger than the number of links shown for that file. The same pattern already applies to `Statements` /
+   `Missing stmts`.
+4. Pull request coverage is recalculated from the statement and branch arc lists. The report's overall
+   coverage percentage comes from coverage.py's summary counts, which can still credit
+   `# pragma: no branch` arcs. So, the two percentages can differ slightly even when the PR adds an entire
+   file. Enable `BRANCH_COVERAGE` when your report includes branch data so both sides include branches.
+5. If the complete project report option is enabled, file totals and the project coverage percentage are
+   taken from the report as-is. Differences versus pull request coverage are expected when the scopes or
+   formulas differ as above.
 
 ## Dev Setup
 

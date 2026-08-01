@@ -169,19 +169,26 @@ def test_comment_template(coverage_obj, diff_coverage_obj):
     assert 'Missing stmts' in result
     assert 'Branches' not in result
     assert 'img.shields.io/badge/' in result
+    # Coarse badge labels keep their rounded text; hover titles carry two decimals.
+    precise_coverage = template.pct(coverage_obj.info.percent_covered, precision=2)
+    precise_diff = template.pct(diff_coverage_obj.total_percent_covered, precision=2)
+    precise_file_diff = template.pct(chaned_files[0].diff.percent_covered, precision=2)
+    assert f'title="{precise_coverage}"' in result
+    assert f'title="{precise_diff}"' in result
+    assert f' "{precise_file_diff}")' in result
 
 
-def test_comment_template_branch_coverage(coverage_obj, diff_coverage_obj):
+def test_comment_template_branch_coverage(coverage_obj, diff_coverage_obj_branch):
     chaned_files, total = template.select_changed_files(
         coverage=coverage_obj,
-        diff_coverage=diff_coverage_obj,
+        diff_coverage=diff_coverage_obj_branch,
         max_files=25,
         skip_covered_files_in_report=True,
     )
     result = template.get_comment_markdown(
         template.read_template_file('comment.md.j2'),
         coverage_obj,
-        diff_coverage_obj,
+        diff_coverage_obj_branch,
         decimal.Decimal('100'),
         decimal.Decimal('70'),
         'org/repo',
@@ -202,6 +209,10 @@ def test_comment_template_branch_coverage(coverage_obj, diff_coverage_obj):
     assert '(new stmts)' in result
     # The delimiter row must always declare as many columns as the header row
     assert '| :-- | :-: | :-: | :-: | :-: | :-: | :-: | :-- | :-- |' in result
+    # The partial branch on line 5 is in the diff and its missing arc leaves the scope.
+    assert '[5 -> exit]' in result
+    # The branch on line 10 is missing coverage but is outside the diff.
+    assert '[10 -> 11]' not in result
 
 
 def test_comment_template_project_report(coverage_obj, diff_coverage_obj):
@@ -234,6 +245,39 @@ def test_comment_template_project_report(coverage_obj, diff_coverage_obj):
     assert '(new stmts)' not in result
     assert 'https://github.com/org/repo/blob/main/codebase/code.py' in result
     assert '| :-- | :-: | :-: | :-: | :-: | :-: | :-- | :-- |' in result
+    # The whole project table lists every branch missing coverage in the file, and links
+    # an arc leaving the scope to its source line only.
+    assert '[5 -> exit](https://github.com/org/repo/blob/main/codebase/code.py#L5-L5)' in result
+    assert '[10 -> 11](https://github.com/org/repo/blob/main/codebase/code.py#L10-L11)' in result
+
+
+def test_comment_template_backward_branch(make_coverage_obj, diff_coverage_obj):
+    """A loop branches back to its own header, so the link range has to be reordered."""
+    coverage = make_coverage_obj(**{'codebase/code.py': {'missing_branches': [[7, 6]]}})
+    coverage_files, total = template.select_files(
+        coverage=coverage,
+        max_files=25,
+        skip_covered_files_in_report=True,
+    )
+    result = template.get_comment_markdown(
+        template.read_template_file('comment.md.j2'),
+        coverage,
+        diff_coverage_obj,
+        decimal.Decimal('100'),
+        decimal.Decimal('70'),
+        'org/repo',
+        1,
+        'main',
+        '<!-- foo -->',
+        coverage_files=coverage_files,
+        count_coverage_files=total,
+        files=[],
+        count_files=0,
+        max_files=25,
+        branch_coverage=True,
+        complete_project_report=True,
+    )
+    assert '[7 -> 6](https://github.com/org/repo/blob/main/codebase/code.py#L6-L7)' in result
 
 
 def test_template_no_files(coverage_obj):

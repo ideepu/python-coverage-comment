@@ -24,6 +24,10 @@ class FileDiffCoverage:
     # Added lines tracks all the lines that were added in the diff, not just
     # the statements (so it includes comments, blank lines, etc.)
     added_lines: list[int]
+    # Branch arcs ([source line, destination line]) that start on an added line.
+    # Both stay empty unless the report contains branch coverage and it is enabled.
+    covered_branches: list[list[int]] = dataclasses.field(default_factory=list)
+    missing_branches: list[list[int]] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass

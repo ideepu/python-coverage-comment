@@ -45,6 +45,7 @@ docs: update environment variable docs
 
 - Allowed types: `feature`, `fix`, `docs`, `refactor` (optional `!` for breaking changes).
 - Only commit when the user asks. Never amend pushed commits unless explicitly requested.
+- If there are additional changes added after the agent changes, **do not rollback** to previous changes. Continue with the changes and commit.
 
 ## Pre-PR checks
 

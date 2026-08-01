@@ -123,20 +123,32 @@ def make_coverage() -> Callable[[str, bool], PytestCoverage]:
                 coverage_obj.info.excluded_lines += 1
 
             if has_branches and 'branch' in line:
-                coverage_obj.files[current_file].info.num_branches += 1
-                coverage_obj.info.num_branches += 1
-                coverage_obj.files[current_file].executed_branches.append([line_number, line_number + 1])
+                file_coverage = coverage_obj.files[current_file]
+                # A branch is a `[source line, destination line]` arc, and an arc is either
+                # taken or missing, never both. A partial branch is a line with one arc of
+                # each, the missing one leaving the enclosing scope (a negative destination).
                 if 'branch partial' in line:
-                    # Even if it's partially covered, it's still considered as a missing branch
-                    coverage_obj.files[current_file].missing_branches.append([line_number, line_number + 1])
-                    coverage_obj.files[current_file].info.num_partial_branches += 1
+                    file_coverage.executed_branches.append([line_number, line_number + 1])
+                    file_coverage.missing_branches.append([line_number, -line_number])
+                    file_coverage.info.num_branches += 2
+                    coverage_obj.info.num_branches += 2
+                    file_coverage.info.covered_branches += 1
+                    coverage_obj.info.covered_branches += 1
+                    file_coverage.info.missing_branches += 1
+                    coverage_obj.info.missing_branches += 1
+                    file_coverage.info.num_partial_branches += 1
                     coverage_obj.info.num_partial_branches += 1
                 elif 'branch covered' in line:
-                    coverage_obj.files[current_file].info.covered_branches += 1
+                    file_coverage.executed_branches.append([line_number, line_number + 1])
+                    file_coverage.info.num_branches += 1
+                    coverage_obj.info.num_branches += 1
+                    file_coverage.info.covered_branches += 1
                     coverage_obj.info.covered_branches += 1
                 elif 'branch missing' in line:
-                    coverage_obj.files[current_file].missing_branches.append([line_number, line_number + 1])
-                    coverage_obj.files[current_file].info.missing_branches += 1
+                    file_coverage.missing_branches.append([line_number, line_number + 1])
+                    file_coverage.info.num_branches += 1
+                    coverage_obj.info.num_branches += 1
+                    file_coverage.info.missing_branches += 1
                     coverage_obj.info.missing_branches += 1
 
             info = coverage_obj.files[current_file].info
@@ -221,15 +233,17 @@ def coverage_json():
                     'percent_covered_display': '60%',
                     'missing_lines': 4,
                     'excluded_lines': 0,
-                    'num_branches': 3,
+                    'num_branches': 7,
+                    # Line 5 is partial: one of its two arcs was taken.
                     'num_partial_branches': 1,
-                    'covered_branches': 1,
-                    'missing_branches': 1,
+                    'covered_branches': 4,
+                    'missing_branches': 3,
                 },
                 'missing_lines': [6, 8, 10, 11],
                 'excluded_lines': [],
-                'executed_branches': [[1, 0], [2, 1], [3, 0], [5, 1], [13, 0], [14, 0]],
-                'missing_branches': [[6, 0], [8, 1], [10, 0], [11, 0]],
+                'executed_branches': [[2, 3], [3, 5], [5, 6], [13, 14]],
+                # A negative destination is a branch leaving the enclosing scope.
+                'missing_branches': [[5, -1], [10, 11], [11, -1]],
             }
         },
         'totals': {
@@ -239,10 +253,10 @@ def coverage_json():
             'percent_covered_display': '60%',
             'missing_lines': 4,
             'excluded_lines': 0,
-            'num_branches': 3,
+            'num_branches': 7,
             'num_partial_branches': 1,
-            'covered_branches': 1,
-            'missing_branches': 1,
+            'covered_branches': 4,
+            'missing_branches': 3,
         },
     }
 
@@ -326,6 +340,15 @@ def diff_coverage_obj(coverage_obj, make_diff_coverage):
     return make_diff_coverage(
         added_lines={pathlib.Path('codebase/code.py'): [3, 4, 5, 6, 7, 8, 9, 12]},
         coverage=coverage_obj,
+    )
+
+
+@pytest.fixture
+def diff_coverage_obj_branch(coverage_obj, make_diff_coverage):
+    return make_diff_coverage(
+        added_lines={pathlib.Path('codebase/code.py'): [3, 4, 5, 6, 7, 8, 9, 12]},
+        coverage=coverage_obj,
+        branch_coverage=True,
     )
 
 
